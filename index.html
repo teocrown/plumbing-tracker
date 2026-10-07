@@ -2,582 +2,1066 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Crown Elite — Job Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Crown Elite Job Tracker</title>
+<meta name="theme-color" content="#1C1A17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Job Tracker">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --cream:#F7F4EF;--warm-white:#FDFCFA;--ink:#1C1A17;--ink-light:#5C5750;--ink-faint:#A8A39C;
+    --cream:#F7F4EF;--warm-white:#FDFCFA;--ink:#1C1A17;--ink-light:#5C5750;--ink-faint:#8F8A83;
     --copper:#B5651D;--copper-light:#E8D5C4;--copper-pale:#F5EDE4;
     --blue:#2D5A8E;--blue-light:#EBF1F9;--green:#2D6E4E;--green-light:#E8F4EE;
     --amber:#C17B2A;--amber-light:#FBF0E0;--red:#9B3A2A;--red-light:#FAEAE7;
     --border:#E5E0D8;--shadow:0 2px 8px rgba(28,26,23,0.08);--shadow-lg:0 8px 32px rgba(28,26,23,0.12);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;}
-  .header{background:var(--ink);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;}
-  .header-brand{display:flex;align-items:center;gap:10px;}
-  .header-icon{width:32px;height:32px;background:var(--copper);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
-  .header-title{font-family:'DM Serif Display',serif;color:var(--warm-white);font-size:18px;}
-  .header-sub{color:var(--ink-faint);font-size:11px;}
-  .header-actions{display:flex;gap:6px;align-items:center;}
-  .sync-status{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;}
+  html{-webkit-text-size-adjust:100%;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;}
+  button,input,select,textarea{font-family:inherit;}
+  a{color:var(--copper);}
+  .header{background:var(--ink);padding:0 14px;padding-top:env(safe-area-inset-top);display:flex;align-items:center;justify-content:space-between;min-height:58px;position:sticky;top:0;z-index:100;gap:8px;}
+  .header-brand{display:flex;align-items:center;gap:10px;min-width:0;}
+  .header-icon{width:32px;height:32px;background:var(--copper);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .header-title{font-family:'DM Serif Display',serif;color:var(--warm-white);font-size:18px;line-height:1.1;}
+  .header-sub{color:#B9B3AA;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .header-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+  .sync-status{padding:4px 9px;border-radius:6px;font-size:12px;font-weight:500;white-space:nowrap;}
   .sync-status.saving{background:rgba(255,255,255,0.1);color:#ccc;}
   .sync-status.saved{background:rgba(45,110,78,0.3);color:#7DCEA0;}
-  .sync-status.error{background:rgba(155,58,42,0.3);color:#F1948A;}
-  .btn{padding:7px 12px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+  .sync-status.error{background:rgba(155,58,42,0.35);color:#F4A79C;}
+  .btn{padding:9px 13px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;display:inline-flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;white-space:nowrap;}
   .btn-primary{background:var(--copper);color:white;}.btn-primary:hover{background:#9B5518;}
   .btn-ghost{background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.15);}
-  .btn-ghost:hover{background:rgba(255,255,255,0.18);}
   .btn-outline{background:white;color:var(--ink);border:1px solid var(--border);}.btn-outline:hover{background:var(--cream);}
-  .btn-sm{padding:5px 10px;font-size:12px;}
-  .tab-bar{background:white;border-bottom:1px solid var(--border);display:flex;padding:0 16px;}
-  .tab-btn{padding:13px 16px;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--ink-faint);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+  .btn-green{background:var(--green);color:white;}.btn-red{background:var(--red);color:white;}
+  .btn-sm{padding:6px 10px;font-size:12px;}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .tab-bar{background:white;border-bottom:1px solid var(--border);display:flex;padding:0 8px;overflow-x:auto;position:sticky;top:58px;z-index:90;}
+  .tab-btn{padding:13px 12px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink-faint);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;}
   .tab-btn.active{color:var(--copper);border-bottom-color:var(--copper);}
-  .stats-bar{background:var(--warm-white);border-bottom:1px solid var(--border);padding:8px 0;}
-  .stats-row{display:flex;overflow-x:auto;}
-  .stat-item{flex:1;min-width:90px;padding:5px 14px;border-right:1px solid var(--border);text-align:center;}
-  .stat-item:last-child{border-right:none;}
-  .stat-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);line-height:1;}
-  .stat-val.copper{color:var(--copper);}.stat-val.blue{color:var(--blue);}.stat-val.green{color:var(--green);}
-  .stat-label{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.7px;margin-top:2px;}
+  .tab-count{background:var(--copper);color:white;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;}
+  .tab-count.red{background:var(--red);}
+  .banner{padding:8px 14px;font-size:13px;text-align:center;background:var(--amber-light);color:#7A4A10;border-bottom:1px solid #E8C88A;}
+  .banner button{margin-left:8px;}
   .page{display:none;}.page.active{display:block;}
   .container{max-width:1200px;margin:0 auto;padding:0 14px;}
-  .main{padding:18px 0 60px;}
+  .main{padding:16px 0 80px;}
   .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
-  .search-wrap{position:relative;flex:1;min-width:160px;max-width:300px;}
-  .search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-faint);}
-  .search-input{width:100%;padding:8px 10px 8px 30px;border:1px solid var(--border);border-radius:8px;background:white;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;}
+  .search-input{flex:1;min-width:160px;max-width:320px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:white;font-size:14px;outline:none;}
   .search-input:focus{border-color:var(--copper);}
-  /* MASTER TABLE */
+  .seg{display:flex;gap:3px;background:white;border:1px solid var(--border);border-radius:8px;padding:3px;}
+  .seg button{padding:6px 10px;font-size:12px;border:none;border-radius:6px;background:none;color:var(--ink-light);cursor:pointer;font-weight:500;}
+  .seg button.on{background:var(--ink);color:white;}
+  .muted{color:var(--ink-faint);font-size:12px;}
   .master-table-wrap{background:white;border-radius:12px;border:1px solid var(--border);overflow:auto;box-shadow:var(--shadow);}
   .master-table{width:100%;border-collapse:collapse;font-size:12px;}
-  .master-table th{background:var(--ink);color:rgba(255,255,255,0.8);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;padding:10px 10px;text-align:left;white-space:nowrap;}
+  .master-table th{background:var(--ink);color:rgba(255,255,255,0.85);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;padding:10px;text-align:left;white-space:nowrap;}
   .master-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
   .master-table tr:last-child td{border-bottom:none;}
-  .master-table tr:hover td{background:var(--copper-pale);cursor:pointer;}
-  .addr-cell{font-weight:600;font-size:13px;color:var(--ink);}
+  .master-table tbody tr{cursor:pointer;}
+  .master-table tbody tr:hover td{background:var(--copper-pale);}
+  .addr-cell{font-weight:600;font-size:13px;white-space:nowrap;}
   .addr-city{font-size:11px;font-weight:400;color:var(--ink-faint);margin-top:1px;}
-  .permit-cell{font-size:11px;color:var(--ink-faint);font-family:monospace;}
+  .permit-cell{font-size:12px;color:var(--ink-light);font-family:ui-monospace,Menlo,monospace;}
   .insp-cell{text-align:center;min-width:60px;}
-  .insp-dot{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+  .insp-dot{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
   .insp-dot.done{background:var(--green-light);color:var(--green);}
+  .insp-dot.fail{background:var(--red);color:white;}
   .insp-dot.empty{background:var(--cream);color:var(--ink-faint);border:1px solid var(--border);font-size:9px;}
-  .insp-date{font-size:9px;color:var(--ink-faint);margin-top:1px;display:block;}
-  .prog-bar{height:4px;background:var(--border);border-radius:2px;width:50px;}
-  .prog-fill{height:100%;border-radius:2px;background:var(--copper);}
-  /* JOB CARDS */
-  .jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
-  .job-card{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s;cursor:pointer;}
-  .job-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
-  .job-card-header{padding:13px 14px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
-  .job-address{font-weight:600;font-size:14px;line-height:1.3;flex:1;}
-  .job-lot{font-size:11px;color:var(--ink-faint);margin-top:2px;}
-  .status-badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;margin-left:8px;}
+  .insp-date{font-size:9px;color:var(--ink-faint);margin-top:1px;display:block;white-space:nowrap;}
+  .prog-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+  .prog-fill{height:100%;border-radius:3px;background:var(--copper);}
+  .jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;}
+  .job-card{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;}
+  .job-card.has-fail{border-color:var(--red);}
+  .job-card-header{padding:13px 14px 9px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .job-address{font-weight:600;font-size:15px;line-height:1.3;}
+  .job-lot{font-size:12px;color:var(--ink-faint);margin-top:2px;}
+  .status-badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
   .status-active{background:var(--blue-light);color:var(--blue);}
   .status-complete{background:var(--green-light);color:var(--green);}
   .status-pending{background:var(--amber-light);color:var(--amber);}
   .status-warranty{background:var(--copper-pale);color:var(--copper);}
-  .job-card-body{padding:10px 14px;}
-  .phases-label{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-faint);margin-bottom:6px;}
-  .phases-row{display:flex;gap:4px;flex-wrap:wrap;}
-  .phase-chip{padding:3px 7px;border-radius:4px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--cream);color:var(--ink-light);}
-  .phase-chip.done{background:var(--green-light);color:var(--green);border-color:#B8DEC9;}
-  .phase-chip.inprogress{background:var(--amber-light);color:var(--amber);border-color:#E8C88A;}
-  .job-card-footer{padding:8px 14px;background:var(--cream);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-  .last-visit{font-size:11px;color:var(--ink-faint);}
-  .worker-avatars{display:flex;}
-  .worker-avatar{width:22px;height:22px;border-radius:50%;background:var(--copper-light);border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--copper);margin-left:-4px;}
-  .worker-avatar:first-child{margin-left:0;}
-  .empty-state{text-align:center;padding:50px 20px;color:var(--ink-faint);}
-  .empty-icon{font-size:36px;margin-bottom:10px;}
-  .empty-title{font-size:15px;font-weight:600;color:var(--ink-light);margin-bottom:5px;}
-  /* MODALS */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(28,26,23,0.5);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .job-card-body{padding:0 14px 11px;}
+  .job-card-footer{padding:8px 14px;background:var(--cream);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--ink-faint);gap:8px;}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+  .chip-red{background:var(--red-light);color:var(--red);}
+  .chip-blue{background:var(--blue-light);color:var(--blue);}
+  .chip-amber{background:var(--amber-light);color:#8A5412;}
+  .chip-grey{background:var(--cream);color:var(--ink-light);border:1px solid var(--border);}
+  .empty-state{text-align:center;padding:44px 20px;color:var(--ink-faint);font-size:14px;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(28,26,23,0.5);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .2s;}
   .modal-backdrop.open{opacity:1;pointer-events:all;}
-  .modal{background:white;border-radius:16px;width:100%;max-width:580px;box-shadow:var(--shadow-lg);transform:translateY(20px);transition:transform .2s;margin:auto;}
-  .modal-backdrop.open .modal{transform:translateY(0);}
-  .modal-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .modal{background:white;border-radius:16px;width:100%;max-width:560px;box-shadow:var(--shadow-lg);margin:auto;}
+  .modal-header{padding:15px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .modal-title{font-family:'DM Serif Display',serif;font-size:19px;}
-  .modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink-light);}
-  .modal-close:hover{background:var(--cream);}
-  .modal-body{padding:16px 20px;}
-  .modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
-  .form-row{display:flex;gap:10px;margin-bottom:10px;}
-  .form-row .form-group{flex:1;}
-  .form-group{margin-bottom:10px;}
+  .modal-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;color:var(--ink-light);flex-shrink:0;}
+  .modal-body{padding:15px 18px;}
+  .modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+  .form-row{display:flex;gap:10px;}
+  .form-row .form-group{flex:1;min-width:0;}
+  .form-group{margin-bottom:11px;}
   .form-label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-light);margin-bottom:4px;}
-  .form-input,.form-select,.form-textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:white;outline:none;transition:border-color .15s;}
+  .form-input,.form-select,.form-textarea{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:15px;color:var(--ink);background:white;outline:none;}
   .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--copper);}
-  .form-textarea{resize:vertical;min-height:60px;}
-  /* DETAIL */
-  .detail-backdrop{position:fixed;inset:0;background:var(--cream);z-index:150;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease;}
-  .detail-backdrop.open{transform:translateX(0);}
-  .detail-header{background:white;border-bottom:1px solid var(--border);padding:13px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
-  .back-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);}
-  .back-btn:hover{background:var(--cream);}
-  .detail-title-wrap{flex:1;}
-  .detail-title{font-family:'DM Serif Display',serif;font-size:17px;line-height:1.2;}
-  .detail-meta{font-size:11px;color:var(--ink-faint);margin-top:1px;}
-  .detail-body{max-width:880px;margin:0 auto;padding:18px 14px 60px;}
-  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-  .info-card{background:white;border:1px solid var(--border);border-radius:12px;padding:13px;}
-  .info-card-title{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-faint);margin-bottom:10px;font-weight:600;}
+  .form-textarea{resize:vertical;min-height:70px;}
+  .form-hint{font-size:12px;color:var(--ink-faint);margin-top:4px;}
+  .detail-backdrop{position:fixed;inset:0;background:var(--cream);z-index:150;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease;visibility:hidden;}
+  .detail-backdrop.open{transform:translateX(0);visibility:visible;}
+  .detail-header{background:white;border-bottom:1px solid var(--border);padding:11px 14px;padding-top:calc(11px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
+  .back-btn{width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;}
+  .detail-title-wrap{flex:1;min-width:0;}
+  .detail-title{font-family:'DM Serif Display',serif;font-size:18px;line-height:1.2;color:var(--ink);text-decoration:none;display:inline-block;}
+  .detail-title .pin{font-size:14px;margin-right:3px;}
+  .detail-meta{font-size:12px;color:var(--ink-faint);margin-top:1px;}
+  .detail-body{max-width:880px;margin:0 auto;padding:14px 14px 80px;}
+  .action-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .action-row .btn{flex:1;min-width:120px;padding:11px 10px;}
   .full-card{background:white;border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:12px;}
-  .full-card-title{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-faint);margin-bottom:10px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
-  .phase-list{display:flex;flex-direction:column;gap:6px;}
-  .phase-row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;border:1px solid var(--border);background:var(--cream);}
+  .full-card-title{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-light);margin-bottom:10px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .project-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .project-num{font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:600;letter-spacing:.5px;user-select:all;-webkit-user-select:all;padding:4px 10px;background:var(--cream);border:1px solid var(--border);border-radius:8px;}
+  .wd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:white;margin-bottom:12px;font-size:13px;}
+  .wd.past{background:var(--amber-light);border-color:#E8C88A;}
+  .wd input{padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:14px;background:white;}
+  .cl-row{display:flex;align-items:flex-start;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);}
+  .cl-row:last-child{border-bottom:none;}
+  .cl-box{width:28px;height:28px;border-radius:8px;border:2px solid #C9C2B7;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:white;flex-shrink:0;margin-top:1px;}
+  .cl-box.on{background:var(--green);border-color:var(--green);}
+  .cl-box.part{background:var(--amber);border-color:var(--amber);font-size:11px;font-weight:700;}
+  .cl-main{flex:1;min-width:0;}
+  .cl-text{font-size:15px;font-weight:500;line-height:1.3;}
+  .cl-row.done .cl-text{color:var(--ink-light);}
+  .cl-sub{font-size:12px;color:var(--ink-faint);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .cl-side{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+  .cl-count{font-size:13px;font-weight:600;color:var(--ink-light);white-space:nowrap;}
+  .icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:white;cursor:pointer;font-size:14px;color:var(--ink-light);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .add-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+  .add-row .form-input,.add-row .form-select{flex:1;min-width:120px;}
+  .insp-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .insp-table td{padding:8px 4px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .insp-table tr:last-child td{border-bottom:none;}
+  .insp-type{font-weight:600;white-space:nowrap;}
+  .insp-pass{color:var(--green);font-weight:600;}
+  .insp-fail{color:var(--red);font-weight:700;}
+  .insp-hist{font-size:12px;color:var(--ink-light);margin-top:3px;}
+  .insp-hist .f{color:var(--red);}
+  .fail-box{background:var(--red-light);border:1px solid #E5B5AC;color:var(--red);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
+  .phase-row{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;border:1px solid var(--border);background:var(--cream);margin-bottom:6px;}
   .phase-row.done{background:var(--green-light);border-color:#B8DEC9;}
   .phase-row.inprogress{background:var(--amber-light);border-color:#E8C88A;}
-  .phase-check{width:17px;height:17px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;}
-  .phase-row.done .phase-check{background:var(--green);border-color:var(--green);color:white;}
-  .phase-row.inprogress .phase-check{background:var(--amber);border-color:var(--amber);color:white;}
-  .phase-name{font-size:12px;font-weight:500;flex:1;}
-  .phase-date{font-size:10px;color:var(--ink-faint);}
-  .phase-status-select{padding:2px 6px;border-radius:5px;border:1px solid var(--border);background:white;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;outline:none;}
-  .insp-table{width:100%;border-collapse:collapse;font-size:12px;}
-  .insp-table th{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-faint);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;}
-  .insp-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
-  .insp-table tr:last-child td{border-bottom:none;}
-  .insp-type{font-weight:500;}
-  .insp-done{color:var(--green);font-weight:600;}
-  .insp-input{padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;background:white;}
-  .insp-input:focus{border-color:var(--copper);}
-  .blueprint-area{background:white;border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:12px;}
-  .blueprint-link-row{display:flex;gap:7px;}
-  .blueprint-link-row .form-input{flex:1;}
-  .blueprint-frame{margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--cream);min-height:260px;display:flex;align-items:center;justify-content:center;}
-  .blueprint-placeholder{text-align:center;color:var(--ink-faint);padding:30px;}
-  .blueprint-placeholder p{font-size:12px;margin-top:5px;}
-  .log-list{display:flex;flex-direction:column;gap:6px;}
-  .log-entry{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:white;display:flex;gap:8px;align-items:flex-start;}
-  .log-avatar{width:28px;height:28px;border-radius:50%;background:var(--copper-light);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--copper);flex-shrink:0;}
-  .log-info{flex:1;}
-  .log-worker{font-size:13px;font-weight:600;}
+  .phase-name{font-size:14px;font-weight:500;flex:1;}
+  .phase-date{font-size:11px;color:var(--ink-light);}
+  .phase-status-select{padding:6px 8px;border-radius:7px;border:1px solid var(--border);background:white;font-size:13px;}
+  .log-entry{padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:white;display:flex;gap:9px;align-items:flex-start;margin-bottom:6px;}
+  .log-avatar{width:30px;height:30px;border-radius:50%;background:var(--copper-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--copper);flex-shrink:0;}
+  .log-info{flex:1;min-width:0;}
+  .log-worker{font-size:14px;font-weight:600;}
   .log-detail{font-size:12px;color:var(--ink-light);margin-top:1px;}
-  .log-notes{font-size:12px;color:var(--ink-faint);margin-top:2px;font-style:italic;}
-  .log-date{font-size:11px;color:var(--ink-faint);white-space:nowrap;}
-  .fixture-list{display:flex;flex-direction:column;gap:5px;}
-  .fixture-row{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:8px;border:1px solid var(--border);background:var(--cream);font-size:12px;}
-  .fixture-dot{width:6px;height:6px;border-radius:50%;background:var(--copper);flex-shrink:0;}
+  .log-notes{font-size:13px;color:var(--ink-light);margin-top:2px;}
+  .log-date{font-size:11px;color:var(--ink-faint);white-space:nowrap;text-align:right;}
+  .fixture-row{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:8px;border:1px solid var(--border);background:var(--cream);font-size:13px;margin-bottom:5px;}
   .fixture-name{flex:1;}
-  .fixture-phase{font-size:11px;color:var(--ink-faint);}
-  .fixture-del{width:19px;height:19px;border-radius:4px;border:none;background:none;cursor:pointer;color:var(--ink-faint);display:flex;align-items:center;justify-content:center;font-size:12px;}
-  .fixture-del:hover{background:var(--red-light);color:var(--red);}
-  .inline-add{display:flex;gap:6px;margin-top:8px;}
-  .inline-add .form-input{flex:1;}
   .doc-slots-grid{display:flex;gap:8px;flex-wrap:wrap;}
-  .doc-tile{width:110px;border:1px solid var(--border);border-radius:10px;background:white;padding:10px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;}
+  .doc-tile{flex:1;min-width:130px;border:1px solid var(--border);border-radius:10px;background:white;padding:10px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;}
   .doc-tile.has-link{border-color:var(--copper-light);background:var(--copper-pale);}
   .doc-tile-icon{font-size:22px;line-height:1;}
-  .doc-tile-label{font-size:11px;font-weight:600;color:var(--ink-light);text-align:center;}
-  .doc-tile-input{width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--ink);outline:none;background:white;}
-  .doc-tile-input:focus{border-color:var(--copper);}
+  .doc-tile-label{font-size:12px;font-weight:600;color:var(--ink-light);}
+  .doc-tile-input{width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:12px;}
   .doc-tile-btns{display:flex;gap:4px;width:100%;}
-  .doc-tile-btn{flex:1;padding:4px 0;border-radius:5px;border:1px solid var(--border);background:white;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;text-align:center;color:var(--ink-light);}
-  .doc-tile-btn:hover{background:var(--cream);}
-  .doc-tile-btn.open{background:var(--copper);color:white;border-color:var(--copper);}
-  .doc-tile-btn.open:hover{background:#9B5518;}
-  .doc-preview-frame{margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--cream);}
-  .doc-preview-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--ink);color:white;font-size:12px;font-weight:600;}
-  .doc-preview-header button{background:rgba(255,255,255,0.15);border:none;color:white;padding:3px 8px;border-radius:5px;cursor:pointer;font-size:11px;}
-  @media(max-width:600px){.detail-grid{grid-template-columns:1fr;}.form-row{flex-direction:column;}.jobs-grid{grid-template-columns:1fr;}}
+  .doc-tile-btns .btn{flex:1;}
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;}
+  .photo-thumb{aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--cream);border:1px solid var(--border);cursor:pointer;position:relative;}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb span{position:absolute;left:0;right:0;bottom:0;background:rgba(28,26,23,.6);color:white;font-size:9px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .up-row{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .up-row .ok{color:var(--green);font-weight:600;}.up-row .bad{color:var(--red);font-weight:600;}
+  .viewer img{max-width:100%;max-height:70vh;display:block;margin:0 auto;border-radius:8px;}
+  .section-title{font-family:'DM Serif Display',serif;font-size:20px;margin:18px 0 10px;}
+  .section-title:first-child{margin-top:0;}
+  .list-card{background:white;border:1px solid var(--border);border-radius:12px;padding:6px 12px;margin-bottom:12px;}
+  .list-head{font-size:11px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;color:var(--ink-light);padding:10px 0 4px;display:flex;justify-content:space-between;align-items:center;}
+  .list-head.red{color:var(--red);}
+  .house-link{color:var(--copper);font-weight:600;cursor:pointer;text-decoration:underline;}
+  .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+  .person-card{background:white;border:1px solid var(--border);border-radius:12px;padding:12px;}
+  .person-name{font-weight:600;font-size:16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .user-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .user-row:last-child{border-bottom:none;}
+  .rep-table{width:100%;border-collapse:collapse;font-size:13px;background:white;}
+  .rep-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-light);padding:7px 8px;border-bottom:2px solid var(--border);}
+  .rep-table td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .rep-group{font-weight:700;background:var(--copper-pale);}
+  .login{position:fixed;inset:0;background:var(--ink);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+  .login.open{display:flex;}
+  .login-card{background:var(--warm-white);border-radius:18px;padding:24px 20px;width:100%;max-width:400px;text-align:center;}
+  .login-logo{width:56px;height:56px;background:var(--copper);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;}
+  .login-title{font-family:'DM Serif Display',serif;font-size:24px;}
+  .login-names{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+  .login-names button{padding:16px 8px;font-size:16px;font-weight:600;border-radius:12px;border:1px solid var(--border);background:white;cursor:pointer;color:var(--ink);}
+  .pin-input{font-size:28px;letter-spacing:10px;text-align:center;padding:12px;border:2px solid var(--border);border-radius:12px;width:100%;margin-top:12px;outline:none;}
+  .pin-input:focus{border-color:var(--copper);}
+  .login-err{color:var(--red);font-size:14px;margin-top:10px;min-height:20px;}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:white;padding:11px 16px;border-radius:10px;font-size:14px;z-index:600;opacity:0;transition:all .25s;max-width:92vw;text-align:center;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.bad{background:var(--red);}
+  @media(max-width:600px){.form-row{flex-direction:column;gap:0;}.jobs-grid{grid-template-columns:1fr;}.header-sub{display:none;}.hide-sm{display:none;}}
+  @media print{.header,.tab-bar,.banner,.no-print,.toast{display:none!important;}body{background:white;}.main{padding:0;}.page{display:none!important;}#page-reports{display:block!important;}}
 </style>
 </head>
 <body>
 
+<div class="login" id="login"><div class="login-card" id="login-card"></div></div>
+
 <div class="header">
   <div class="header-brand">
     <div class="header-icon">🔧</div>
-    <div><div class="header-title">Crown Elite</div><div class="header-sub">Plumbing Job Tracker</div></div>
+    <div style="min-width:0"><div class="header-title">Crown Elite</div><div class="header-sub" id="header-sub">Plumbing Job Tracker</div></div>
   </div>
   <div class="header-actions">
     <span id="sync-status" class="sync-status"></span>
-    <button class="btn btn-ghost btn-sm" onclick="loadFromSheet()">⟳ Sync</button>
-    <button class="btn btn-primary btn-sm" onclick="openNewJobModal()">+ New Job</button>
+    <button class="btn btn-ghost btn-sm" onclick="sync(true)">⟳ Sync</button>
+    <button class="btn btn-ghost btn-sm" id="me-btn" onclick="openMeMenu()"></button>
   </div>
 </div>
+<div class="banner" id="queue-banner" style="display:none"></div>
+<div class="tab-bar" id="tab-bar"></div>
 
-<div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('inspections',this)">📋 Inspections</button>
-  <button class="tab-btn" onclick="switchTab('jobs',this)">🏠 Jobs & Progress</button>
-  <button class="tab-btn" onclick="switchTab('completed',this)">✅ Completed Jobs</button>
-</div>
+<div class="page" id="page-mylist"><div class="main"><div class="container" id="mylist-body"></div></div></div>
 
-<div class="stats-bar"><div class="container"><div class="stats-row">
-  <div class="stat-item"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Total Homes</div></div>
-  <div class="stat-item"><div class="stat-val green" id="stat-final">0</div><div class="stat-label">Final Done</div></div>
-  <div class="stat-item"><div class="stat-val copper" id="stat-inprog">0</div><div class="stat-label">In Progress</div></div>
-  <div class="stat-item"><div class="stat-val blue" id="stat-jobs">0</div><div class="stat-label">Active Jobs</div></div>
+<div class="page" id="page-inspections"><div class="main"><div class="container">
+  <div class="toolbar">
+    <input class="search-input" id="insp-search" placeholder="Search address, city, project #..." oninput="inspSearch=this.value;renderInspections()">
+    <div class="seg" id="insp-filter"><button class="on" onclick="setInspFilter('all')">All</button><button onclick="setInspFilter('failed')">Failed</button></div>
+    <span id="insp-count" class="muted"></span>
+  </div>
+  <div class="master-table-wrap"><table class="master-table">
+    <thead><tr><th>Address</th><th>Project #</th><th class="insp-cell">Ground</th><th class="insp-cell">Sewer</th><th class="insp-cell">Gas</th><th class="insp-cell">Rough In</th><th class="insp-cell">Shower Pan</th><th class="insp-cell">Temp Gas</th><th class="insp-cell">Final</th><th>Checklist</th></tr></thead>
+    <tbody id="insp-tbody"></tbody>
+  </table></div>
 </div></div></div>
 
-<!-- INSPECTIONS TAB -->
-<div class="page active" id="page-inspections">
-  <div class="main"><div class="container">
-    <div class="toolbar">
-      <div class="search-wrap">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" placeholder="Search address, city, permit..." oninput="filterInspections(this.value)">
-      </div>
-      <span id="insp-count" style="font-size:12px;color:var(--ink-faint)"></span>
-    </div>
-    <div class="master-table-wrap">
-      <table class="master-table">
-        <thead><tr>
-          <th>Address</th><th>Permit #</th>
-          <th class="insp-cell">Ground</th><th class="insp-cell">Sewer</th><th class="insp-cell">Gas</th>
-          <th class="insp-cell">Rough In</th><th class="insp-cell">Show Pan</th><th class="insp-cell">Temp Gas</th><th class="insp-cell">Final</th>
-          <th>Progress</th>
-        </tr></thead>
-        <tbody id="insp-tbody"></tbody>
-      </table>
-    </div>
-  </div></div>
-</div>
-
-<!-- JOBS TAB -->
-<div class="page" id="page-jobs">
-  <div class="main"><div class="container">
-    <div class="toolbar">
-      <div class="search-wrap">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" placeholder="Search jobs..." oninput="filterJobs(this.value)">
-      </div>
-      <div id="job-filter-tabs" style="display:flex;gap:3px;background:white;border:1px solid var(--border);border-radius:8px;padding:3px">
-        <button class="btn btn-sm" style="background:var(--ink);color:white;border-radius:6px" onclick="setJobFilter('all',this)">All</button>
-        <button class="btn btn-sm" style="background:none;color:var(--ink-light);border-radius:6px" onclick="setJobFilter('active',this)">Active</button>
-        <button class="btn btn-sm" style="background:none;color:var(--ink-light);border-radius:6px" onclick="setJobFilter('warranty',this)">Warranty</button>
-      </div>
-    </div>
-    <div class="jobs-grid" id="jobs-grid"></div>
-    <div id="jobs-empty" class="empty-state" style="display:none"><div class="empty-icon">🏠</div><div class="empty-title">No jobs found</div><div style="font-size:13px">Add a new job or adjust filters</div></div>
-  </div></div>
-</div>
-
-<!-- COMPLETED JOBS TAB -->
-<div class="page" id="page-completed">
-  <div class="main"><div class="container">
-    <div class="toolbar">
-      <div class="search-wrap">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" placeholder="Search completed jobs..." oninput="filterCompleted(this.value)">
-      </div>
-      <span id="completed-count" style="font-size:12px;color:var(--ink-faint)"></span>
-    </div>
-    <div class="jobs-grid" id="completed-grid"></div>
-    <div id="completed-empty" class="empty-state" style="display:none"><div class="empty-icon">✅</div><div class="empty-title">No completed jobs yet</div><div style="font-size:13px">Mark a job as complete from the job detail view</div></div>
-  </div></div>
-</div>
-
-<!-- NEW JOB MODAL -->
-<div class="modal-backdrop" id="new-job-modal">
-  <div class="modal">
-    <div class="modal-header"><div class="modal-title" id="job-modal-title">Add New Job</div><button class="modal-close" onclick="closeNewJobModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Street Address *</label><input class="form-input" id="nj-address" placeholder="e.g. 1234 Oak Lane"></div>
-        <div class="form-group"><label class="form-label">Lot / Unit #</label><input class="form-input" id="nj-lot" placeholder="Lot 42"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Subdivision</label><input class="form-input" id="nj-subdivision" placeholder="Crown Elite"></div>
-        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="nj-status"><option value="active">Active</option><option value="pending">Pending</option><option value="complete">Complete</option><option value="warranty">Warranty</option></select></div>
-      </div>
-      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="nj-notes" placeholder="Special instructions..."></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeNewJobModal()">Cancel</button>
-      <button class="btn btn-primary" id="job-modal-save-btn" onclick="saveNewJob()">Create Job</button>
-    </div>
+<div class="page" id="page-jobs"><div class="main"><div class="container">
+  <div class="toolbar">
+    <input class="search-input" id="job-search" placeholder="Search houses..." oninput="jobSearch=this.value;renderJobs()">
+    <div class="seg" id="job-filter"><button class="on" onclick="setJobFilter('all')">All</button><button onclick="setJobFilter('active')">Active</button><button onclick="setJobFilter('pending')">Pending</button><button onclick="setJobFilter('warranty')">Warranty</button></div>
+    <button class="btn btn-primary owner-only" onclick="openJobModal()">+ New House</button>
   </div>
-</div>
+  <div class="jobs-grid" id="jobs-grid"></div>
+  <div id="jobs-empty" class="empty-state" style="display:none">No houses found</div>
+</div></div></div>
 
-<!-- LOG MODAL -->
-<div class="modal-backdrop" id="add-log-modal">
-  <div class="modal">
-    <div class="modal-header"><div class="modal-title">Log Work Visit</div><button class="modal-close" onclick="closeLogModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Worker Name *</label><input class="form-input" id="log-worker" placeholder="Carlos M."></div>
-        <div class="form-group"><label class="form-label">Date *</label><input class="form-input" id="log-date" type="date"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Phase</label>
-        <select class="form-select" id="log-phase"><option>Ground</option><option>Rough-in</option><option>Top out</option><option>Trim</option><option>Final inspection</option><option>Service/Warranty</option><option>General</option></select>
-      </div>
-      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="log-notes" placeholder="What was done..."></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeLogModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveLog()">Save</button>
-    </div>
+<div class="page" id="page-completed"><div class="main"><div class="container">
+  <div class="toolbar">
+    <input class="search-input" placeholder="Search completed houses..." oninput="completedSearch=this.value;renderCompleted()">
+    <span id="completed-count" class="muted"></span>
   </div>
-</div>
+  <div class="jobs-grid" id="completed-grid"></div>
+  <div id="completed-empty" class="empty-state" style="display:none">No completed houses yet</div>
+</div></div></div>
 
-<!-- DETAIL -->
+<div class="page" id="page-team"><div class="main"><div class="container" id="team-body"></div></div></div>
+<div class="page" id="page-reports"><div class="main"><div class="container" id="reports-body"></div></div></div>
+
+<div class="modal-backdrop" id="modal"><div class="modal">
+  <div class="modal-header"><div class="modal-title" id="modal-title"></div><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body" id="modal-body"></div>
+  <div class="modal-footer" id="modal-footer"></div>
+</div></div>
+
 <div class="detail-backdrop" id="detail-view">
   <div class="detail-header">
-    <button class="back-btn" onclick="closeDetail()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
-    <div class="detail-title-wrap"><div class="detail-title" id="detail-title"></div><div class="detail-meta" id="detail-meta"></div></div>
-    <div style="display:flex;gap:5px">
-      <button class="btn btn-outline btn-sm" onclick="openLogModal()">+ Log Visit</button>
-      <button class="btn btn-primary btn-sm" onclick="openEditModal()">Edit</button>
-      <button class="btn btn-sm" id="complete-btn" style="background:var(--green);color:white" onclick="markJobComplete()">✓ Mark Complete</button>
-    </div>
+    <button class="back-btn" onclick="closeDetail()" aria-label="Back"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+    <div class="detail-title-wrap"><a class="detail-title" id="detail-title" target="_blank" rel="noopener"></a><div class="detail-meta" id="detail-meta"></div></div>
   </div>
-  <div class="detail-body">
-    <div class="blueprint-area">
-      <div class="full-card-title">📄 Documents <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--ink-faint)">Paste Google Drive share links</span></div>
-      <div id="doc-slots"></div>
-      <div id="doc-preview-area"></div>
-    </div>
-    <div class="full-card">
-      <div class="full-card-title">🔍 Inspection Dates <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--ink-faint)">Click date field to update</span></div>
-      <table class="insp-table"><thead><tr><th>Inspection</th><th>Date</th><th></th></tr></thead><tbody id="detail-insp-body"></tbody></table>
-    </div>
-    <div class="detail-grid">
-      <div class="info-card"><div class="info-card-title">Phase Progress</div><div class="phase-list" id="detail-phases"></div></div>
-      <div class="info-card"><div class="info-card-title">Job Info</div><div id="detail-info"></div></div>
-    </div>
-    <div class="full-card">
-      <div class="full-card-title">🔧 Fixtures Installed</div>
-      <div class="fixture-list" id="detail-fixtures"></div>
-      <div class="inline-add">
-        <input class="form-input" id="fixture-name-input" placeholder="Fixture name...">
-        <select class="form-select" style="max-width:110px" id="fixture-phase-input"><option>Ground</option><option>Rough-in</option><option>Top out</option><option>Trim</option><option>Final</option></select>
-        <button class="btn btn-outline btn-sm" onclick="addFixture()">Add</button>
-      </div>
-    </div>
-    <div class="full-card">
-      <div class="full-card-title">👷 Work Log <button class="btn btn-outline btn-sm" onclick="openLogModal()">+ Log Visit</button></div>
-      <div class="log-list" id="detail-log"></div>
-      <div id="log-empty" style="text-align:center;padding:18px;color:var(--ink-faint);font-size:13px;display:none">No visits logged yet</div>
-    </div>
-  </div>
+  <div class="detail-body" id="detail-body"></div>
 </div>
+<input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="photoFilesPicked(this)">
+<div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyb5KC0EeXO253R5tjU0-zyzdBl3A8TUXN0YMSLD-E7J5qxDZHAtVj-_URy6-yepAk/exec';
-const PHASES=['Ground','Rough-in','Top out','Trim','Final inspection','Service/Warranty'];
-const INSP_KEYS=['ground','sewer','gas','roughIn','showPan','tempGas','final'];
-const INSP_LABELS=['Ground','Sewer','Gas','Rough In','Show Pan','Temp Gas','Final'];
-const SEED=[{"permit":"22035462","address":"6413 LEOPOLD STAR LN","city":"HOU TX","zip":"77048","inspections":{"ground":"2023-05-02","sewer":"2023-05-02","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"22035468","address":"6402 PREGONERO LN","city":"HOU TX","zip":"77048","inspections":{"ground":"2023-06-29","sewer":"2023-06-29","gas":"","roughIn":"2025-11-03","showPan":"2025-12-05","tempGas":"","final":""}},{"permit":"22035469","address":"6404 PREGONERO LN","city":"HOU TX","zip":"77048","inspections":{"ground":"2023-06-29","sewer":"2023-06-29","gas":"","roughIn":"2025-11-03","showPan":"2025-12-10","tempGas":"2026-02-13","final":""}},{"permit":"22108230","address":"6313 JOE LOUIS LN","city":"HOU TX","zip":"77091","inspections":{"ground":"2023-08-15","sewer":"2023-08-15","gas":"","roughIn":"2023-10-09","showPan":"2024-02-21","tempGas":"","final":""}},{"permit":"24052109","address":"6503 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-04-28","sewer":"2025-04-28","gas":"2025-06-24","roughIn":"2025-08-01","showPan":"2025-10-17","tempGas":"2025-12-16","final":"2026-01-30"}},{"permit":"24056467","address":"6505 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-12","sewer":"2024-12-12","gas":"2025-06-27","roughIn":"2025-08-15","showPan":"2025-10-17","tempGas":"2025-12-16","final":"2026-02-05"}},{"permit":"24056468","address":"6507 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-12","sewer":"2024-12-12","gas":"2025-06-27","roughIn":"2025-08-15","showPan":"2025-10-23","tempGas":"2025-12-16","final":"2026-02-23"}},{"permit":"24058907","address":"6509 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-11","sewer":"2024-12-11","gas":"2025-06-24","roughIn":"2025-02-13","showPan":"2025-04-04","tempGas":"2025-12-17","final":"2026-01-28"}},{"permit":"24058908","address":"6511 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-11","sewer":"2024-12-11","gas":"2025-06-24","roughIn":"2025-02-13","showPan":"2025-04-04","tempGas":"2025-11-14","final":"2025-12-11"}},{"permit":"24063051","address":"6513 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-11","sewer":"2024-12-11","gas":"2025-06-24","roughIn":"2025-02-06","showPan":"2025-04-04","tempGas":"2025-12-05","final":"2025-12-22"}},{"permit":"24063052","address":"6515 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-11","sewer":"2024-12-11","gas":"","roughIn":"2025-02-18","showPan":"2025-04-04","tempGas":"2026-01-07","final":""}},{"permit":"24063053","address":"6517 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-11","sewer":"2024-12-11","gas":"","roughIn":"2025-02-18","showPan":"2025-04-21","tempGas":"2026-01-07","final":""}},{"permit":"24063071","address":"6439 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-11","sewer":"2024-12-11","gas":"2025-06-24","roughIn":"2025-01-24","showPan":"2025-03-31","tempGas":"2025-12-05","final":"2025-12-11"}},{"permit":"24063072","address":"6441 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-11","sewer":"2024-12-11","gas":"2025-06-24","roughIn":"2025-01-27","showPan":"2025-03-31","tempGas":"2025-11-14","final":"2025-12-22"}},{"permit":"24061162","address":"6443 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-12","sewer":"2024-12-12","gas":"2025-06-24","roughIn":"2025-02-06","showPan":"2025-03-31","tempGas":"2025-12-09","final":"2025-12-22"}},{"permit":"24061163","address":"6445 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-12","sewer":"2024-12-12","gas":"2025-06-24","roughIn":"2025-02-06","showPan":"2025-03-31","tempGas":"2025-12-10","final":"2025-12-23"}},{"permit":"24058899","address":"6447 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-12","sewer":"2024-12-12","gas":"2025-06-27","roughIn":"2025-07-17","showPan":"2025-09-11","tempGas":"2025-12-09","final":"2026-01-14"}},{"permit":"24058900","address":"6449 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2024-12-12","sewer":"2024-12-12","gas":"2025-06-27","roughIn":"2025-07-17","showPan":"2025-09-11","tempGas":"2025-12-10","final":"2026-01-12"}},{"permit":"24052104","address":"6451 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-04-28","sewer":"2025-04-28","gas":"2025-06-24","roughIn":"2025-07-25","showPan":"2025-10-10","tempGas":"2025-12-11","final":"2026-01-09"}},{"permit":"24052105","address":"6453 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-04-28","sewer":"2025-04-28","gas":"2025-06-24","roughIn":"2025-07-25","showPan":"2025-10-10","tempGas":"2025-12-11","final":"2026-01-09"}},{"permit":"24058905","address":"6523 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-23","sewer":"2025-06-23","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24058906","address":"6525 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-23","sewer":"2025-06-23","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24056473","address":"6527 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-23","sewer":"2025-06-23","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24056474","address":"6529 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-23","sewer":"2025-06-23","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24056470","address":"6531 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-25","sewer":"2025-06-25","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24056469","address":"6533 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-25","sewer":"2025-06-25","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24056471","address":"6535 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-25","sewer":"2025-06-25","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24056472","address":"6537 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-25","sewer":"2025-06-25","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24061159","address":"6539 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-25","sewer":"2025-06-25","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24061160","address":"6541 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-06-25","sewer":"2025-06-25","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24064688","address":"6519 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-07-02","sewer":"2025-07-02","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24064689","address":"6521 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-07-02","sewer":"2025-07-02","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24064690","address":"6551 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-07-02","sewer":"2025-07-02","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24064691","address":"6553 RENA ST","city":"HOU TX","zip":"77092","inspections":{"ground":"2025-07-02","sewer":"2025-07-02","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"23115100","address":"2647 LAKE KOLBE LN","city":"HOU TX","zip":"77080","inspections":{"ground":"2024-11-13","sewer":"2024-11-12","gas":"","roughIn":"2025-02-03","showPan":"2025-04-11","tempGas":"2025-08-24","final":""}},{"permit":"25052869","address":"8719 KEMPWOOD DR","city":"","zip":"","inspections":{"ground":"2025-09-24","sewer":"2025-09-26","gas":"","roughIn":"2025-12-10","showPan":"2026-02-03","tempGas":"2026-03-02","final":""}},{"permit":"25052870","address":"2816 LAKE KOLBE LN","city":"","zip":"","inspections":{"ground":"2025-09-26","sewer":"2025-09-26","gas":"","roughIn":"2025-12-01","showPan":"2026-01-23","tempGas":"2026-03-02","final":""}},{"permit":"24067464","address":"2703 LAKE KOLBE LN","city":"","zip":"","inspections":{"ground":"2025-10-28","sewer":"2025-10-28","gas":"","roughIn":"2025-12-22","showPan":"2026-03-02","tempGas":"","final":""}},{"permit":"24066320","address":"2629 LAKE KOLBE LN","city":"","zip":"","inspections":{"ground":"2026-02-11","sewer":"2026-01-28","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25016868","address":"3305 STANDLING BROOK","city":"HOU TX","zip":"77080","inspections":{"ground":"2025-07-10","sewer":"2025-08-14","gas":"","roughIn":"2025-08-20","showPan":"2025-09-29","tempGas":"2025-10-30","final":"2025-12-19"}},{"permit":"24106841","address":"3432 STANLING BROOK LN","city":"HOU TX","zip":"","inspections":{"ground":"2025-09-30","sewer":"2025-09-30","gas":"","roughIn":"2025-11-17","showPan":"2026-01-06","tempGas":"2026-02-02","final":""}},{"permit":"24106842","address":"3434 STANLING BROOK LN","city":"HOU TX","zip":"","inspections":{"ground":"2025-09-30","sewer":"2025-09-30","gas":"","roughIn":"2025-11-20","showPan":"2026-01-06","tempGas":"2026-02-02","final":""}},{"permit":"24106843","address":"3436 STANLING BROOK LN","city":"HOU TX","zip":"","inspections":{"ground":"2025-09-30","sewer":"2025-09-30","gas":"","roughIn":"2025-11-20","showPan":"2026-01-06","tempGas":"2026-02-02","final":""}},{"permit":"24106844","address":"3438 STANLING BROOK LN","city":"HOU TX","zip":"","inspections":{"ground":"2025-09-30","sewer":"2025-09-30","gas":"","roughIn":"2025-11-13","showPan":"2026-01-06","tempGas":"2026-02-02","final":""}},{"permit":"25000433","address":"6136 COTTAGE GROVE","city":"HOU TX","zip":"","inspections":{"ground":"2025-12-29","sewer":"2025-12-29","gas":"","roughIn":"2026-02-19","showPan":"","tempGas":"","final":""}},{"permit":"25000434","address":"6138 COTTAGE GROVE","city":"HOU TX","zip":"","inspections":{"ground":"2025-12-29","sewer":"2025-12-29","gas":"","roughIn":"2026-02-19","showPan":"","tempGas":"","final":""}},{"permit":"25000435","address":"6140 COTTAGE GROVE","city":"HOU TX","zip":"","inspections":{"ground":"2025-12-29","sewer":"2025-12-29","gas":"","roughIn":"2026-02-18","showPan":"","tempGas":"","final":""}},{"permit":"25000436","address":"6142 COTTAGE GROVE","city":"HOU TX","zip":"","inspections":{"ground":"2025-12-29","sewer":"2025-12-29","gas":"","roughIn":"2026-03-04","showPan":"","tempGas":"","final":""}},{"permit":"24071526","address":"6120 COTTAGE GROVE LAKE","city":"HOU TX","zip":"77007","inspections":{"ground":"2025-09-22","sewer":"2025-10-09","gas":"","roughIn":"2025-10-27","showPan":"2025-12-16","tempGas":"2026-12-18","final":"2026-03-10"}},{"permit":"24072629","address":"6122 COTTAGE GROVE LAKE","city":"HOU TX","zip":"77007","inspections":{"ground":"2025-11-04","sewer":"2025-11-04","gas":"","roughIn":"2025-12-16","showPan":"2026-02-05","tempGas":"2026-03-11","final":""}},{"permit":"24016351","address":"1004 GOLDEN NECTAR LN","city":"","zip":"","inspections":{"ground":"2026-02-19","sewer":"2026-02-19","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25028193","address":"3304 GREEN NOOK LN","city":"","zip":"","inspections":{"ground":"2026-02-19","sewer":"2026-02-19","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25028194","address":"3306 GREEN NOOK LN","city":"","zip":"","inspections":{"ground":"2026-02-19","sewer":"2026-02-19","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25013409","address":"6254 KANSAS ST","city":"HOU TX","zip":"77007","inspections":{"ground":"2026-02-09","sewer":"2026-02-09","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25013410","address":"6256 KANSAS ST","city":"HOU TX","zip":"77007","inspections":{"ground":"2026-02-09","sewer":"2026-02-09","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25013411","address":"6258 KANSAS ST","city":"HOU TX","zip":"77007","inspections":{"ground":"2026-02-09","sewer":"2026-02-09","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25013412","address":"6260 KANSAS ST","city":"HOU TX","zip":"77007","inspections":{"ground":"2026-02-09","sewer":"2026-02-09","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25061233","address":"626 RAINWOOD","city":"HOU TX","zip":"","inspections":{"ground":"2025-10-15","sewer":"2025-10-14","gas":"","roughIn":"2025-12-16","showPan":"","tempGas":"","final":""}},{"permit":"","address":"6903 AVE B","city":"BELLAIRE","zip":"77401","inspections":{"ground":"2025-09-15","sewer":"2025-09-15","gas":"","roughIn":"2026-02-13","showPan":"","tempGas":"","final":""}},{"permit":"24003372","address":"3 N SAINT CHARLES ST # C","city":"HOU TX","zip":"","inspections":{"ground":"2025-11-17","sewer":"2025-11-17","gas":"","roughIn":"2026-01-08","showPan":"2026-03-17","tempGas":"","final":""}},{"permit":"24003373","address":"4 N SAINT CHARLES ST # D","city":"HOU TX","zip":"","inspections":{"ground":"2025-11-17","sewer":"2025-11-17","gas":"","roughIn":"2026-01-08","showPan":"","tempGas":"","final":""}},{"permit":"25106682","address":"7207 AVENUE J A","city":"HOU TX","zip":"77011","inspections":{"ground":"2026-02-03","sewer":"","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25106683","address":"7207 AVENUE J B","city":"HOU TX","zip":"77011","inspections":{"ground":"2026-02-03","sewer":"","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108312","address":"5303 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-13","sewer":"2026-02-13","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108317","address":"5305 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-13","sewer":"2026-02-13","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108320","address":"5306 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108321","address":"5307 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108325","address":"5308 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108322","address":"5309 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-13","sewer":"2026-02-13","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108318","address":"5310 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108313","address":"5311 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108319","address":"5312 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108326","address":"5313 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108327","address":"5314 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108323","address":"5315 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108314","address":"5316 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"25108315","address":"5317 JESSELTON LN","city":"HOU TX","zip":"77019","inspections":{"ground":"2026-02-18","sewer":"2026-02-18","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"24040448","address":"963 W 41ST ST","city":"HOU TX","zip":"77018","inspections":{"ground":"2024-11-07","sewer":"2024-11-07","gas":"","roughIn":"2025-01-23","showPan":"2025-05-21","tempGas":"2025-09-02","final":"2026-03-12"}},{"permit":"24011106","address":"5531 GRAPE (P1)","city":"HOU TX","zip":"77096","inspections":{"ground":"2025-05-19","sewer":"2025-05-22","gas":"","roughIn":"2025-05-19","showPan":"2025-11-13","tempGas":"2025-12-11","final":"2026-02-23"}},{"permit":"","address":"26707 ALDERBROOK AVE","city":"MONT TX","zip":"77316","inspections":{"ground":"2025-12-08","sewer":"2025-12-08","gas":"","roughIn":"2026-01-07","showPan":"","tempGas":"","final":""}},{"permit":"","address":"26743 ALDERBROOK AVE","city":"MONT TX","zip":"77316","inspections":{"ground":"2025-12-17","sewer":"2025-12-17","gas":"","roughIn":"2026-01-19","showPan":"","tempGas":"","final":""}},{"permit":"","address":"26747 ALDERBROOK AVE","city":"MONT TX","zip":"77316","inspections":{"ground":"2025-12-17","sewer":"2025-12-17","gas":"","roughIn":"2026-01-19","showPan":"","tempGas":"","final":""}},{"permit":"","address":"26751 ALDERBROOK AVE","city":"MONT TX","zip":"77316","inspections":{"ground":"2025-12-22","sewer":"2025-12-22","gas":"","roughIn":"2026-01-20","showPan":"","tempGas":"","final":""}},{"permit":"","address":"33015 WICKET","city":"FULSHEAR TX","zip":"","inspections":{"ground":"2025-05-08","sewer":"2025-05-22","gas":"","roughIn":"2025-07-11","showPan":"","tempGas":"","final":""}},{"permit":"","address":"4210 WICKHAM","city":"FULSHEAR TX","zip":"","inspections":{"ground":"2025-05-19","sewer":"2025-05-22","gas":"","roughIn":"2025-07-03","showPan":"","tempGas":"","final":""}},{"permit":"","address":"4111 WOODED ISLE","city":"FULSHEAR TX","zip":"","inspections":{"ground":"2025-12-01","sewer":"2026-02-12","gas":"","roughIn":"2026-01-14","showPan":"","tempGas":"","final":""}},{"permit":"","address":"26440 SADDLE HORN","city":"","zip":"","inspections":{"ground":"2026-02-06","sewer":"","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"","address":"2259 FM 1618 (OSBORN)","city":"BUFFALO TX","zip":"","inspections":{"ground":"2025-06-09","sewer":"","gas":"","roughIn":"2025-09-19","showPan":"","tempGas":"","final":""}},{"permit":"","address":"7020 TERRY LANE","city":"RICHMOND TX","zip":"","inspections":{"ground":"2025-04-08","sewer":"2025-04-08","gas":"","roughIn":"2025-05-20","showPan":"","tempGas":"","final":""}},{"permit":"","address":"4219 WICKBY","city":"FULSHEAR TX","zip":"","inspections":{"ground":"2026-02-03","sewer":"2026-02-11","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"","address":"8602 FULSHEAR TRACE RUN","city":"","zip":"","inspections":{"ground":"2026-02-23","sewer":"2026-02-23","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}},{"permit":"","address":"229 HYDRANGEA","city":"SMITHVILLE TX","zip":"78957","inspections":{"ground":"","sewer":"","gas":"","roughIn":"","showPan":"","tempGas":"","final":""}}];
+const SCRIPT_URL = window.JT_TEST_URL || 'https://script.google.com/macros/s/AKfycbyb5KC0EeXO253R5tjU0-zyzdBl3A8TUXN0YMSLD-E7J5qxDZHAtVj-_URy6-yepAk/exec';
+const API_V = 2;
+const PHASES = ['Ground','Rough-in','Top out','Trim','Final inspection','Service/Warranty'];
+const INSP_KEYS = ['ground','sewer','gas','roughIn','showPan','tempGas','final'];
+const INSP_LABELS = ['Ground','Sewer','Gas','Rough In','Shower Pan','Temp Gas','Final'];
+const DOC_KEYS = ['foundation','blueprint','materials','other'];
+const DOC_LABELS = ['Foundation','Blueprints','Materials','Other'];
+const DOC_ICONS = ['🏗️','📐','📦','📎'];
+const STATUS_LABELS = {active:'Active',complete:'Complete',pending:'Pending',warranty:'Warranty'};
 
-let homes=[],jobs=[],currentJobId=null,jobFilter='all',jobSearch='',inspSearch='',isSaving=false;
-function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
-function initPhases(){return PHASES.map(p=>({name:p,status:'pending',date:''}));}
-function getJob(id){return jobs.find(j=>j.id===id);}
-function getInitials(n){return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
-function fmtDate(d){if(!d)return '';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
-function fmtShort(d){if(!d)return '';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+const S = {token:'',me:null,jobs:[],tasks:[],settings:{inspLinks:{},checklistTemplate:[]},users:[],team:[],photoCounts:{},setupOpen:false};
+let queue=[],flushing=false,currentJobId=null,workDate='',tab='',lastSync=0,renderPending=false;
+let jobFilter='all',jobSearch='',inspSearch='',inspFilter='all',completedSearch='',teamDate='';
+const photoCache={},uploads=[];
+let modalFns=[],modalOnClose=null;
 
-function setSyncStatus(s,m){const el=document.getElementById('sync-status');el.textContent=m;el.className='sync-status '+s;if(s==='saved')setTimeout(()=>{el.className='sync-status';el.textContent='';},2500);}
+// ---------- small helpers
+const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function pad(n){return String(n).padStart(2,'0');}
+function isoOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function todayStr(){return isoOf(new Date());}
+function addDays(iso,n){const p=iso.split('-');return isoOf(new Date(+p[0],+p[1]-1,+p[2]+n));}
+function wd(){return workDate&&workDate<=todayStr()?workDate:todayStr();}
+function fmtDate(d){if(!d)return '';const dt=new Date(d+'T00:00:00');if(isNaN(dt))return d;return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fmtShort(d){if(!d)return '';const dt=new Date(d+'T00:00:00');if(isNaN(dt))return d;return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function fmtDay(d){if(!d)return '';const dt=new Date(d+'T00:00:00');if(isNaN(dt))return d;return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
+function tsDate(ts){if(!ts)return '';const d=new Date(ts);return isNaN(d)?'':isoOf(d);}
+function genId(p){let s='';while(s.length<12)s+=Math.random().toString(36).slice(2);return p+s.slice(0,12);}
+function getInitials(n){return String(n||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);}
+function isOwner(){return !!S.me&&S.me.role==='owner';}
+function getJob(id){return S.jobs.find(j=>j.id===id);}
+function userName(id){const u=(S.users.length?S.users:S.team).find(x=>x.id===id);return u?u.name:'';}
+function activeUsers(){return (S.users||[]).filter(u=>u.active);}
+function safeUrl(u){return /^https?:\/\//i.test(String(u||''))?String(u):'';}
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+let toastTimer=null;
+function toast(msg,bad){const t=$('toast');t.textContent=msg;t.className='toast show'+(bad?' bad':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.className='toast';},bad?4500:2200);}
+function setSyncStatus(s,m){const el=$('sync-status');el.textContent=m;el.className='sync-status '+s;if(s==='saved')setTimeout(()=>{if(el.textContent===m){el.className='sync-status';el.textContent='';}},2200);}
 
-async function save(){
-  localStorage.setItem('pjt_jobs',JSON.stringify(jobs));
-  localStorage.setItem('pjt_homes',JSON.stringify(homes));
-  if(isSaving)return;isSaving=true;setSyncStatus('saving','⟳ Saving...');
-  try{const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'save',jobs,homes})});const d=await r.json();setSyncStatus(d.success?'saved':'error',d.success?'✓ Saved':'⚠ Failed');}
-  catch(e){setSyncStatus('error','⚠ Offline');}
-  isSaving=false;
+// ---------- talking to the Google Sheet
+async function api(action,payload,timeoutMs){
+  const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),timeoutMs||45000);
+  let r;
+  try{r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(Object.assign({action,token:S.token,v:API_V},payload||{})),signal:ctl.signal,redirect:'follow'});}
+  catch(e){const err=new Error('No connection');err.code='offline';throw err;}
+  finally{clearTimeout(timer);}
+  let d;
+  try{d=await r.json();}catch(e){const err=new Error('The tracker did not answer correctly. Try again.');err.code='server';throw err;}
+  if(!d||!d.ok){const err=new Error((d&&d.message)||'Something went wrong.');err.code=(d&&d.error)||'server';throw err;}
+  return d;
 }
-
-async function loadFromSheet(){
-  setSyncStatus('saving','⟳ Loading...');
+function applyResponse(d){
+  if(d.job){const i=S.jobs.findIndex(j=>j.id===d.job.id);if(i>=0)S.jobs[i]=d.job;else S.jobs.unshift(d.job);}
+  if(d.task){const i=S.tasks.findIndex(t=>t.id===d.task.id);if(i>=0)S.tasks[i]=d.task;else S.tasks.push(d.task);}
+  if(d.users)S.users=d.users;
+  if(d.settings)S.settings=d.settings;
+  if(d.setupOpen!=null)S.setupOpen=d.setupOpen;
+}
+function saveCache(){lsSet('pjt2_cache',JSON.stringify({jobs:S.jobs,tasks:S.tasks,settings:S.settings,users:S.users,team:S.team,photoCounts:S.photoCounts}));}
+function saveQueue(){lsSet('pjt2_queue',JSON.stringify(queue));updateQueueBanner();}
+function updateQueueBanner(){
+  const b=$('queue-banner');
+  if(!queue.length||flushing){b.style.display='none';return;}
+  b.style.display='block';
+  b.innerHTML=queue.length+' change'+(queue.length===1?'':'s')+' saved on this device, waiting for signal to send. <button class="btn btn-sm btn-outline" onclick="flush()">Send now</button>';
+}
+// Every change goes through here: show it right away when we can, then send it. Nothing is lost if the signal drops.
+const waiters={};
+function mutate(action,payload,local){
+  payload=Object.assign({opId:genId('o_')},payload);
+  if(local){try{local();}catch(e){}}
+  queue.push({action,payload,u:S.me?S.me.id:''});saveQueue();
+  if(local)render();
+  const done=new Promise(res=>{waiters[payload.opId]=res;});
+  flush();
+  return done;
+}
+function settle(op,ok){const w=waiters[op.payload.opId];if(w){delete waiters[op.payload.opId];w(ok);}}
+async function flush(){
+  if(flushing||!queue.length)return;
+  flushing=true;updateQueueBanner();setSyncStatus('saving','Saving...');
+  let needSync=false,failed=false;
+  while(queue.length){
+    const op=queue[0];
+    try{
+      const d=await api(op.action,op.payload);
+      queue.shift();saveQueue();
+      if(d.dup)needSync=true;else applyResponse(d);
+      settle(op,true);
+    }catch(e){
+      if(e.code==='offline'||e.code==='busy'){failed=true;break;}
+      if(e.code==='auth'){flushing=false;authLost(e.message);return;}
+      queue.shift();saveQueue();needSync=true;toast(e.message,true);settle(op,false);
+    }
+  }
+  flushing=false;updateQueueBanner();
+  if(failed){setSyncStatus('error','Not sent yet');render();return;}
+  setSyncStatus('saved','✓ Saved');saveCache();
+  if(needSync)await sync();else render();
+}
+async function sync(manual){
+  if(!S.token)return;
+  if(queue.length){await flush();if(queue.length){if(manual)toast('No signal. Your changes are saved on this phone and will send when you are back online.',true);return;}}
+  setSyncStatus('saving','Loading...');
   try{
-    const r=await fetch(SCRIPT_URL+'?action=load');const d=await r.json();
-    if(d.success){
-      jobs=d.jobs&&d.jobs.length?d.jobs:JSON.parse(localStorage.getItem('pjt_jobs')||'[]');
-      homes=d.homes&&d.homes.length?d.homes:JSON.parse(localStorage.getItem('pjt_homes')||JSON.stringify(SEED));
-      setSyncStatus('saved','✓ Synced');
-    } else throw new Error();
+    const d=await api('load');
+    S.me=d.me;S.jobs=d.jobs;S.tasks=d.tasks;S.settings=d.settings;S.users=d.users||[];S.team=d.team||[];S.photoCounts=d.photoCounts||{};S.setupOpen=!!d.setupOpen;
+    lsSet('pjt2_me',JSON.stringify(S.me));saveCache();lastSync=Date.now();
+    setSyncStatus('saved','✓ Up to date');
+    safeRender();
   }catch(e){
-    jobs=JSON.parse(localStorage.getItem('pjt_jobs')||'[]');
-    homes=JSON.parse(localStorage.getItem('pjt_homes')||JSON.stringify(SEED));
-    setSyncStatus('error','⚠ Offline');
+    if(e.code==='auth'){authLost(e.message);return;}
+    setSyncStatus('error',e.code==='offline'?'Offline':'Sync failed');
+    if(manual)toast(e.code==='offline'?'No signal. Showing the last saved copy.':e.message,true);
   }
-  renderAll();
 }
+function authLost(msg){S.token='';lsDel('pjt2_token');showLogin(msg||'Please enter your PIN again.');}
 
-let completedSearch='';
-function filterCompleted(val){completedSearch=val;renderCompleted();}
-function renderCompleted(){
-  let f=jobs.filter(j=>j.status==='complete');
-  if(completedSearch){const t=completedSearch.toLowerCase();f=f.filter(j=>j.address.toLowerCase().includes(t)||(j.subdivision||'').toLowerCase().includes(t));}
-  const grid=document.getElementById('completed-grid');const empty=document.getElementById('completed-empty');
-  document.getElementById('completed-count').textContent=f.length+' completed job'+(f.length===1?'':'s');
-  if(!f.length){grid.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  const sl={active:'Active',complete:'Complete',pending:'Pending',warranty:'Warranty'};
-  grid.innerHTML=f.map(job=>{
-    const done=job.phases.filter(p=>p.status==='done').length;const inp=job.phases.filter(p=>p.status==='inprogress').length;
-    const lastLog=job.log&&job.log.length?job.log[job.log.length-1]:null;
-    const workers=[...new Set((job.log||[]).map(l=>l.worker))].slice(0,4);
-    return`<div class="job-card" onclick="openDetail('${job.id}')"><div class="job-card-header"><div><div class="job-address">${job.address}</div><div class="job-lot">${[job.subdivision,job.lot].filter(Boolean).join(' · ')||'No subdivision'}</div></div><span class="status-badge status-complete">Complete</span></div><div class="job-card-body"><div class="phases-label">Phases — ${done}/${PHASES.length} complete${inp?`, ${inp} in progress`:''}</div><div class="phases-row">${job.phases.map(p=>`<span class="phase-chip ${p.status==='done'?'done':p.status==='inprogress'?'inprogress':''}">${p.name}</span>`).join('')}</div></div><div class="job-card-footer"><span class="last-visit">${lastLog?'📅 Last: '+fmtDate(lastLog.date):'No visits logged'}</span><div class="worker-avatars">${workers.map(w=>`<div class="worker-avatar">${getInitials(w)}</div>`).join('')}</div></div></div>`;
-  }).join('');
-}
-function markJobComplete(){
-  const job=getJob(currentJobId);if(!job)return;
-  if(job.status==='complete'){
-    if(!confirm('This job is already complete. Move it back to Active?'))return;
-    job.status='active';
-  } else {
-    if(!confirm('Mark "'+job.address+'" as Complete? It will move to the Completed Jobs tab.'))return;
-    job.status='complete';job.completedDate=new Date().toISOString().split('T')[0];
+// ---------- login
+let loginUsers=[],loginSetupOpen=false;
+async function showLogin(msg){
+  $('login').classList.add('open');
+  $('login-card').innerHTML='<div class="login-logo">🔧</div><div class="login-title">Crown Elite</div><div class="muted" style="margin-top:4px">Job Tracker</div><div class="login-err">'+esc(msg||'')+'</div><div class="muted">Loading...</div>';
+  try{
+    const d=await api('users');loginUsers=d.users;loginSetupOpen=!!d.setupOpen;renderLoginNames(msg);
+  }catch(e){
+    const m=e.code==='offline'?'No connection. Check your signal and try again.':e.code==='update'||e.code==='server'?'The tracker needs its Google script updated before this new version can log in. (Brenda: paste the new Code.gs and deploy a new version.)':e.message;
+    $('login-card').innerHTML='<div class="login-logo">🔧</div><div class="login-title">Crown Elite</div><div class="login-err">'+esc(m)+'</div><button class="btn btn-primary" style="margin-top:10px" onclick="showLogin()">Try again</button>';
   }
-  save();renderDetail();renderJobs();renderCompleted();updateStats();
 }
-function renderAll(){updateStats();renderInspections();renderJobs();renderCompleted();}
-
-function updateStats(){
-  document.getElementById('stat-total').textContent=homes.length;
-  document.getElementById('stat-final').textContent=homes.filter(h=>h.inspections.final).length;
-  document.getElementById('stat-inprog').textContent=homes.filter(h=>{const d=INSP_KEYS.filter(k=>h.inspections[k]).length;return d>0&&d<INSP_KEYS.length;}).length;
-  document.getElementById('stat-jobs').textContent=jobs.filter(j=>j.status==='active').length;
+function renderLoginNames(msg){
+  $('login-card').innerHTML='<div class="login-logo">🔧</div><div class="login-title">Crown Elite</div><div class="muted" style="margin-top:4px">Job Tracker. Who is this?</div><div class="login-err">'+esc(msg||'')+'</div><div class="login-names">'+
+    loginUsers.map(u=>'<button onclick="pickLoginUser(\''+esc(u.id)+'\')">'+esc(u.name)+'</button>').join('')+'</div>';
+}
+function pickLoginUser(id){
+  const u=loginUsers.find(x=>x.id===id);if(!u)return;
+  const head='<div class="login-logo">'+esc(getInitials(u.name))+'</div><div class="login-title">'+esc(u.name)+'</div>';
+  const back='<button class="btn btn-outline" style="margin-top:14px" onclick="renderLoginNames()">← Not '+esc(u.name)+'</button>';
+  if(u.hasPin){
+    $('login-card').innerHTML=head+'<div class="muted" style="margin-top:4px">Enter your PIN. This phone will remember you.</div><input class="pin-input" id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" onkeydown="if(event.key===\'Enter\')doLogin(\''+esc(u.id)+'\')"><div class="login-err" id="login-err"></div><button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px" id="login-go" onclick="doLogin(\''+esc(u.id)+'\')">Log in</button>'+back;
+    $('pin').focus();
+  }else if(u.role==='owner'&&loginSetupOpen){
+    $('login-card').innerHTML=head+'<div class="muted" style="margin-top:4px">First time setup. Enter the setup code, then choose your own PIN (4 to 8 numbers).</div><input class="form-input" id="setup-code" placeholder="Setup code" autocapitalize="characters" autocomplete="off" style="margin-top:12px;text-align:center;font-size:18px;letter-spacing:2px"><input class="pin-input" id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off"><input class="pin-input" id="pin2" type="password" inputmode="numeric" maxlength="8" placeholder="Again" autocomplete="off"><div class="login-err" id="login-err"></div><button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px" id="login-go" onclick="doSetup(\''+esc(u.id)+'\')">Save my PIN</button>'+back;
+  }else{
+    $('login-card').innerHTML=head+'<div class="login-err">No PIN has been set for you yet. Ask Brenda or Teodoro to set one.</div>'+back;
+  }
+}
+async function doLogin(id){
+  const pin=$('pin').value.trim();if(!pin)return;
+  $('login-go').disabled=true;$('login-err').textContent='';
+  try{const d=await api('login',{userId:id,pin});loggedIn(d);}
+  catch(e){$('login-err').textContent=e.code==='offline'?'No connection. Try again.':e.message;$('login-go').disabled=false;$('pin').value='';$('pin').focus();}
+}
+async function doSetup(id){
+  const pin=$('pin').value.trim(),pin2=$('pin2').value.trim(),code=$('setup-code').value.trim();
+  if(!/^\d{4,8}$/.test(pin)){$('login-err').textContent='A PIN is 4 to 8 numbers.';return;}
+  if(pin!==pin2){$('login-err').textContent='The two PINs do not match.';return;}
+  $('login-go').disabled=true;$('login-err').textContent='';
+  try{const d=await api('setup',{userId:id,pin,code});loggedIn(d);}
+  catch(e){$('login-err').textContent=e.code==='offline'?'No connection. Try again.':e.message;$('login-go').disabled=false;}
+}
+function loggedIn(d){
+  S.token=d.token;S.me=d.me;queue=queue.filter(o=>o.u===d.me.id);saveQueue();lsSet('pjt2_token',S.token);lsSet('pjt2_me',JSON.stringify(S.me));
+  $('login').classList.remove('open');tab='';S.jobs=[];S.tasks=[];render();sync(true);
+}
+function openMeMenu(){
+  openModal({title:S.me?S.me.name:'',body:'<p style="font-size:14px;color:var(--ink-light)">Logged in as <b>'+esc(S.me.name)+'</b> on this device.</p>'+(isOwner()?'<p class="form-hint" style="margin-top:8px">To change your own PIN, go to Team & To Dos.</p>':''),
+    buttons:[{label:'Log out of this device',cls:'btn-outline',fn:async()=>{if(queue.length&&!confirm(queue.length+' change(s) on this device have not been sent yet and will be lost if you log out now. Log out anyway?'))return;closeModal();queue=[];saveQueue();try{await api('logout');}catch(e){}S.token='';S.me=null;lsDel('pjt2_token');lsDel('pjt2_me');lsDel('pjt2_cache');showLogin();}},{label:'Close',cls:'btn-primary',fn:closeModal}]});
 }
 
-function switchTab(tab,el){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');document.getElementById('page-'+tab).classList.add('active');
+// ---------- modal
+function openModal(o){
+  $('modal-title').textContent=o.title||'';$('modal-body').innerHTML=o.body||'';
+  modalFns=(o.buttons||[]).map(b=>b.fn);modalOnClose=o.onClose||null;
+  $('modal-footer').innerHTML=(o.buttons||[]).map((b,i)=>'<button class="btn '+(b.cls||'btn-outline')+'" onclick="modalFns['+i+']()">'+esc(b.label)+'</button>').join('');
+  $('modal').classList.add('open');
+  const f=$('modal-body').querySelector('[data-focus]');if(f)f.focus();
+}
+function closeModal(){$('modal').classList.remove('open');const c=modalOnClose;modalOnClose=null;if(c)c();if(renderPending)safeRender();}
+function modalOpen(){return $('modal').classList.contains('open');}
+function isTyping(){const a=document.activeElement;return !!a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox';}
+function safeRender(){if(modalOpen()||isTyping()){renderPending=true;return;}render();}
+document.addEventListener('focusout',()=>{if(renderPending)setTimeout(()=>{if(renderPending)safeRender();},150);});
+
+// ---------- tabs and top level render
+function tabsFor(){
+  const mine=myListItems().filter(x=>!x.done&&x.date&&x.date<=todayStr()).length;
+  const fails=S.jobs.filter(j=>j.status!=='complete'&&openFails(j).length).length;
+  const failBadge=fails?'<span class="tab-count red">'+fails+'</span>':'';
+  const myBadge=mine?'<span class="tab-count">'+mine+'</span>':'';
+  if(isOwner())return [['inspections','📋 Inspections'+failBadge],['jobs','🏠 Houses'],['team','👷 Team & To Dos'],['reports','📊 Reports'],['completed','✅ Completed'],['mylist','📝 My List'+myBadge]];
+  return [['mylist','📝 My List'+myBadge],['jobs','🏠 Houses'],['inspections','📋 Inspections'+failBadge],['completed','✅ Completed']];
+}
+function switchTab(t){tab=t;workDate='';render();window.scrollTo(0,0);}
+function render(){
+  renderPending=false;
+  if(!S.me)return;
+  const ae=document.activeElement;const fid=ae&&ae.id&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!$('modal').contains(ae)&&!$('login').contains(ae)?ae.id:'';
+  const fval=fid?ae.value:'';
+  renderPages();
+  if(fid){const el=$(fid);if(el&&el!==ae){el.value=fval;el.focus();}}
+}
+function renderPages(){
+  const tabs=tabsFor();
+  if(!tabs.some(t=>t[0]===tab))tab=tabs[0][0];
+  $('tab-bar').innerHTML=tabs.map(t=>'<button class="tab-btn'+(t[0]===tab?' active':'')+'" onclick="switchTab(\''+t[0]+'\')">'+t[1]+'</button>').join('');
+  $('me-btn').textContent=S.me.name;
+  $('header-sub').textContent='Job Tracker · '+fmtDay(todayStr());
+  document.querySelectorAll('.owner-only').forEach(el=>{el.style.display=isOwner()?'':'none';});
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+tab));
+  if(tab==='mylist')renderMyList();
+  if(tab==='inspections')renderInspections();
+  if(tab==='jobs')renderJobs();
+  if(tab==='completed')renderCompleted();
+  if(tab==='team')renderTeam();
+  if(tab==='reports')renderReports();
+  if(currentJobId)renderDetail();
+  updateQueueBanner();
 }
 
-function filterInspections(val){inspSearch=val;renderInspections();}
+// ---------- shared pieces
+function itemDone(it){return (it.entries||[]).reduce((s,e)=>s+(Number(e.n)||0),0);}
+function checklistProgress(job){const c=job.checklist||[];let total=0,done=0;c.forEach(it=>{const q=Number(it.qty)||1;total+=q;done+=Math.min(q,itemDone(it));});return {total,done};}
+function latestInsp(job,key){let best=null,bi=-1;(job.inspLog||[]).forEach((e,i)=>{if(e.key!==key)return;if(!best||e.date>best.date||(e.date===best.date&&i>bi)){best=e;bi=i;}});return best;}
+function openFails(job){return INSP_KEYS.map((k,i)=>{const l=latestInsp(job,k);return l&&l.result==='fail'?{key:k,label:INSP_LABELS[i],entry:l}:null;}).filter(Boolean);}
+function cityKey(c){return String(c||'').toUpperCase().replace(/\s+/g,' ').trim();}
+function inspUrlFor(job){return safeUrl(job.inspUrl)||safeUrl((S.settings.inspLinks||{})[cityKey(job.city)])||'';}
+function cityFull(c){return String(c||'').replace(/^HOU\b/i,'Houston').replace(/^MONT\b/i,'Montgomery');}
+function mapsUrl(job){
+  const apple=/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+  const addr=[String(job.address||'').replace(/\([^)]*\)/g,'').replace(/\s+P\d+$/i,'').trim(),cityFull(job.city),job.zip].filter(Boolean).join(', ');
+  if(job.pin)return apple?'https://maps.apple.com/?ll='+encodeURIComponent(job.pin)+'&q='+encodeURIComponent(job.address):'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(job.pin);
+  return apple?'https://maps.apple.com/?q='+encodeURIComponent(addr):'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr);
+}
+function workDateBar(){
+  const d=wd(),past=d!==todayStr();
+  return '<div class="wd'+(past?' past':'')+'"><span>'+(past?'⚠ Logging work for':'Logging work for')+'</span><input type="date" value="'+d+'" max="'+todayStr()+'" onchange="setWorkDate(this.value)">'+
+    (past?'<b>'+esc(fmtDay(d))+'</b><button class="btn btn-sm btn-outline" onclick="setWorkDate(\'\')">Back to today</button>':'<span class="muted">Today. Change this when you are catching up on another day.</span>')+'</div>';
+}
+function setWorkDate(v){workDate=v&&v<todayStr()?v:'';render();}
+function entryWho(e){
+  let s=esc(e.byName||'')+' · '+esc(fmtShort(e.date));
+  if(isOwner()&&e.ts){const t=tsDate(e.ts);if(t&&t!==e.date)s+=' <span title="Real time this was entered">(entered '+esc(fmtShort(t))+')</span>';}
+  return s;
+}
+function checklistRow(job,it,showHouse){
+  const q=Number(it.qty)||1,d=Math.min(q,itemDone(it)),done=d>=q;
+  const mine=(it.entries||[]).filter(e=>isOwner()||e.by===S.me.id);
+  const grouped=[];(it.entries||[]).forEach(e=>{const g=q>1&&grouped.find(x=>x.by===e.by&&x.byName===e.byName&&x.date===e.date&&tsDate(x.ts)===tsDate(e.ts));if(g)g.n+=Number(e.n)||0;else grouped.push(Object.assign({},e,{n:Number(e.n)||0}));});
+  const who=grouped.map(e=>(q>1?esc(String(e.n))+' by ':'')+entryWho(e)).join(', ');
+  let box;
+  if(q===1)box='<div class="cl-box'+(done?' on':'')+'" role="checkbox" aria-checked="'+done+'" onclick="'+(done?'uncheckItem':'checkItem')+'(\''+job.id+'\',\''+it.id+'\')">'+(done?'✓':'')+'</div>';
+  else box='<div class="cl-box'+(done?' on':d?' part':'')+'">'+(done?'✓':d||'')+'</div>';
+  let side='';
+  if(q>1){
+    side='<span class="cl-count">'+d+' of '+q+'</span>'+(mine.length&&d?'<button class="icon-btn" title="Undo one" onclick="uncheckItem(\''+job.id+'\',\''+it.id+'\')">−</button>':'')+(done?'':'<button class="btn btn-sm btn-green" onclick="checkItem(\''+job.id+'\',\''+it.id+'\')">+1</button>');
+  }
+  if(isOwner()&&!showHouse)side+='<button class="icon-btn" title="Edit" onclick="openItemModal(\''+job.id+'\',\''+it.id+'\')">✎</button>';
+  let chips='';
+  if(it.assignee){const n=it.assignee===S.me.id?'You':userName(it.assignee);chips+='<span class="chip chip-blue">'+esc(n||'Assigned')+(it.due?' · due '+esc(fmtShort(it.due)):'')+'</span>';}
+  else if(it.due)chips+='<span class="chip chip-grey">due '+esc(fmtShort(it.due))+'</span>';
+  if(it.due&&!done&&it.due<todayStr())chips+='<span class="chip chip-red">past due</span>';
+  const house=showHouse?'<span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span>':'';
+  return '<div class="cl-row'+(done?' done':'')+'">'+box+'<div class="cl-main"><div class="cl-text">'+esc(it.text)+'</div><div class="cl-sub">'+house+chips+(who?'<span>'+who+'</span>':'')+'</div></div><div class="cl-side">'+side+'</div></div>';
+}
+function checkItem(jobId,itemId){
+  const job=getJob(jobId);const it=job&&job.checklist.find(x=>x.id===itemId);if(!it)return;
+  const entryId=genId('e_'),date=wd();
+  mutate('jobOp',{jobId,op:'check',args:{itemId,entryId,n:1,date}},()=>{it.entries.push({id:entryId,by:S.me.id,byName:S.me.name,date,n:1});});
+}
+function uncheckItem(jobId,itemId){
+  const job=getJob(jobId);const it=job&&job.checklist.find(x=>x.id===itemId);if(!it)return;
+  const mine=it.entries.filter(e=>isOwner()||e.by===S.me.id);const e=mine[mine.length-1];
+  if(!e){toast('Only the person who checked this off, or an owner, can undo it.',true);return;}
+  if(!confirm('Undo "'+it.text+'"'+(e.byName?' ('+e.byName+', '+fmtShort(e.date)+')':'')+'?'))return;
+  mutate('jobOp',{jobId,op:'uncheck',args:{itemId,entryId:e.id}},()=>{it.entries=it.entries.filter(x=>x!==e);});
+}
+
+// ---------- My List
+function myListItems(){
+  if(!S.me)return [];
+  const out=[];
+  S.tasks.filter(t=>t.assigneeId===S.me.id).forEach(t=>out.push({type:'task',id:t.id,date:t.date,done:t.done,doneDate:t.doneDate,text:t.text,job:t.jobId?getJob(t.jobId):null,task:t}));
+  S.jobs.filter(j=>j.status!=='complete').forEach(j=>(j.checklist||[]).forEach(it=>{if(it.assignee===S.me.id){const done=itemDone(it)>=(Number(it.qty)||1);const last=(it.entries||[]).slice(-1)[0];out.push({type:'item',id:it.id,date:it.due||'',done,doneDate:last?last.date:'',text:it.text,job:j,item:it});}}));
+  return out;
+}
+function taskRow(t,ownerView){
+  const job=t.jobId?getJob(t.jobId):null;
+  const late=!t.done&&t.date<todayStr();
+  return '<div class="cl-row'+(t.done?' done':'')+'"><div class="cl-box'+(t.done?' on':'')+'" role="checkbox" aria-checked="'+!!t.done+'" onclick="toggleTask(\''+t.id+'\')">'+(t.done?'✓':'')+'</div><div class="cl-main"><div class="cl-text">'+esc(t.text)+'</div><div class="cl-sub">'+
+    (job?'<span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span>':'')+
+    (late?'<span class="chip chip-red">from '+esc(fmtShort(t.date))+'</span>':'')+
+    (t.done?'<span>Done '+esc(fmtShort(t.doneDate))+(ownerView&&t.doneTs&&tsDate(t.doneTs)!==t.doneDate?' (entered '+esc(fmtShort(tsDate(t.doneTs)))+')':'')+'</span>':'')+
+    '</div></div>'+(ownerView?'<div class="cl-side"><button class="icon-btn" title="Edit" onclick="openTaskModal(\''+t.id+'\')">✎</button></div>':'')+'</div>';
+}
+function toggleTask(id){
+  const t=S.tasks.find(x=>x.id===id);if(!t)return;
+  const done=!t.done,date=wd();
+  mutate('taskToggle',{id,done,date},()=>{t.done=done;t.doneDate=done?date:'';t.doneByName=done?S.me.name:'';});
+}
+function renderMyList(){
+  const today=todayStr(),week=addDays(today,7);
+  const items=myListItems();
+  const row=x=>x.type==='task'?taskRow(x.task,false):checklistRow(x.job,x.item,true);
+  const sec=(title,list,cls)=>list.length?'<div class="list-card"><div class="list-head '+(cls||'')+'">'+title+'<span>'+list.filter(x=>!x.done).length+' open</span></div>'+list.map(row).join('')+'</div>':'';
+  const overdue=items.filter(x=>!x.done&&x.date&&x.date<today);
+  const todays=items.filter(x=>x.date===today||(x.done&&x.doneDate===today&&x.date!==today&&x.date));
+  const soon=items.filter(x=>x.date>today&&x.date<=week).sort((a,b)=>a.date<b.date?-1:1);
+  const undated=items.filter(x=>!x.date&&!x.done);
+  let h='<div class="section-title">'+esc(S.me.name)+'\'s list</div>'+workDateBar();
+  h+=sec('Past due',overdue,'red')+sec('Today · '+esc(fmtDay(today)),todays)+sec('Assigned to you',undated);
+  if(soon.length){
+    h+='<div class="list-card"><div class="list-head">Coming up this week</div>';
+    let last='';soon.forEach(x=>{if(x.date!==last){last=x.date;h+='<div class="muted" style="padding:8px 0 0;font-weight:600">'+esc(fmtDay(x.date))+'</div>';}h+=row(x);});
+    h+='</div>';
+  }
+  if(!overdue.length&&!todays.length&&!soon.length&&!undated.length)h+='<div class="empty-state">Nothing on your list right now.<br>Open a house to check off work you finished.</div>';
+  h+='<div class="muted" style="text-align:center;margin-top:6px">Only you and the owners can see this list.</div>';
+  $('mylist-body').innerHTML=h;
+}
+
+// ---------- Inspections table
+function setSeg(id,idx){[...$(id).children].forEach((b,i)=>b.classList.toggle('on',i===idx));}
+function setInspFilter(f){inspFilter=f;setSeg('insp-filter',f==='all'?0:1);renderInspections();}
 function renderInspections(){
-  const completedAddrs=new Set(jobs.filter(j=>j.status==='complete').map(j=>j.address.toLowerCase()));
-  let f=homes.filter(h=>!completedAddrs.has(h.address.toLowerCase()));
-  if(inspSearch){const t=inspSearch.toLowerCase();f=f.filter(h=>h.address.toLowerCase().includes(t)||(h.city||'').toLowerCase().includes(t)||(h.permit||'').toLowerCase().includes(t));}
-  const activeHomes=homes.filter(h=>!completedAddrs.has(h.address.toLowerCase()));
-  document.getElementById('insp-count').textContent=f.length+' of '+activeHomes.length+' homes';
-  document.getElementById('insp-tbody').innerHTML=f.map(h=>{
-    const done=INSP_KEYS.filter(k=>h.inspections[k]).length;
-    const pct=Math.round(done/INSP_KEYS.length*100);
-    const dots=INSP_KEYS.map(k=>{const d=h.inspections[k];return`<td class="insp-cell">${d?`<div class="insp-dot done">✓</div><span class="insp-date">${fmtShort(d)}</span>`:`<div class="insp-dot empty">—</div>`}</td>`;}).join('');
-    return`<tr onclick="openDetailFromAddr('${h.address.replace(/'/g,"\\'")}')"><td><div class="addr-cell">${h.address}</div><div class="addr-city">${[h.city,h.zip].filter(Boolean).join(' ')}</div></td><td class="permit-cell">${h.permit||'—'}</td>${dots}<td><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div><div style="font-size:10px;color:var(--ink-faint);margin-top:2px">${done}/${INSP_KEYS.length}</div></td></tr>`;
-  }).join('');
+  const all=S.jobs.filter(j=>j.status!=='complete').sort(houseSort);
+  let f=all;
+  if(inspFilter==='failed')f=f.filter(j=>openFails(j).length);
+  if(inspSearch){const t=inspSearch.toLowerCase();f=f.filter(h=>(h.address||'').toLowerCase().includes(t)||(h.city||'').toLowerCase().includes(t)||(h.permit||'').toLowerCase().includes(t));}
+  $('insp-count').textContent=f.length+' of '+all.length+' houses';
+  $('insp-tbody').innerHTML=f.map(h=>{
+    const dots=INSP_KEYS.map(k=>{const l=latestInsp(h,k);
+      if(l&&l.result==='fail')return '<td class="insp-cell"><div class="insp-dot fail">✕</div><span class="insp-date">'+esc(fmtShort(l.date))+'</span></td>';
+      if(l)return '<td class="insp-cell"><div class="insp-dot done">✓</div><span class="insp-date">'+esc(fmtShort(l.date))+'</span></td>';
+      return '<td class="insp-cell"><div class="insp-dot empty">·</div></td>';}).join('');
+    const p=checklistProgress(h);const pct=p.total?Math.round(p.done/p.total*100):0;
+    return '<tr onclick="openDetail(\''+h.id+'\')"><td><div class="addr-cell">'+esc(h.address)+'</div><div class="addr-city">'+esc([h.city,h.zip].filter(Boolean).join(' '))+'</div></td><td class="permit-cell">'+esc(h.permit||'')+'</td>'+dots+'<td style="min-width:70px"><div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div><div class="muted" style="font-size:10px;margin-top:2px">'+p.done+' of '+p.total+'</div></td></tr>';
+  }).join('')||'<tr><td colspan="10" class="empty-state">No houses found</td></tr>';
 }
 
-function openDetailFromAddr(address){
-  let job=jobs.find(j=>j.address.toLowerCase()===address.toLowerCase());
-  if(!job){
-    const home=homes.find(h=>h.address===address);
-    job={id:genId(),address,lot:'',subdivision:'',status:'active',notes:'',phases:initPhases(),log:[],fixtures:[],blueprint:'',permit:home?home.permit:'',city:home?home.city:'',inspections:home?{...home.inspections}:{}};
-    jobs.push(job);save();
-  }
-  currentJobId=job.id;renderDetail();document.getElementById('detail-view').classList.add('open');
+// ---------- House cards
+function setJobFilter(f){jobFilter=f;setSeg('job-filter',['all','active','pending','warranty'].indexOf(f));renderJobs();}
+function lastWorkDate(job){let d='';(job.log||[]).forEach(l=>{if(l.date>d)d=l.date;});(job.checklist||[]).forEach(it=>(it.entries||[]).forEach(e=>{if(!e.prior&&e.date>d)d=e.date;}));return d;}
+function jobCard(job){
+  const p=checklistProgress(job);const pct=p.total?Math.round(p.done/p.total*100):0;
+  const fails=openFails(job);const passed=INSP_KEYS.filter(k=>job.inspections&&job.inspections[k]).length;
+  const last=lastWorkDate(job);const pc=S.photoCounts[job.id]||0;
+  return '<div class="job-card'+(fails.length?' has-fail':'')+'" onclick="openDetail(\''+job.id+'\')"><div class="job-card-header"><div><div class="job-address">'+esc(job.address)+'</div><div class="job-lot">'+esc([cityFull(job.city),job.zip].filter(Boolean).join(' ')||'')+(job.permit?' · #'+esc(job.permit):'')+'</div></div><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span></div>'+
+    '<div class="job-card-body">'+fails.map(f=>'<span class="chip chip-red" style="margin:0 4px 6px 0">✕ '+esc(f.label)+' failed</span>').join('')+
+    '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div><div class="muted" style="margin-top:4px">Checklist '+p.done+' of '+p.total+' · Inspections '+passed+' of 7</div></div>'+
+    '<div class="job-card-footer"><span>'+(last?'Last work '+esc(fmtShort(last)):'No work logged yet')+'</span><span>'+(pc?'📷 '+pc:'')+'</span></div></div>';
 }
-
-function filterJobs(val){jobSearch=val;renderJobs();}
-function setJobFilter(f,el){
-  jobFilter=f;
-  document.querySelectorAll('#job-filter-tabs .btn-sm').forEach(b=>{b.style.background='none';b.style.color='var(--ink-light)';});
-  el.style.background='var(--ink)';el.style.color='white';renderJobs();
+function houseSort(a,b){
+  const k=j=>{const m=/^(\d+)\s+(.*)$/.exec(String(j.address||'').trim());return m?[m[2].toUpperCase(),+m[1]]:[String(j.address||'').toUpperCase(),0];};
+  const x=k(a),y=k(b);return x[0]<y[0]?-1:x[0]>y[0]?1:x[1]-y[1];
 }
-
+function matchJob(j,q){const t=q.toLowerCase();return (j.address||'').toLowerCase().includes(t)||(j.subdivision||'').toLowerCase().includes(t)||(j.city||'').toLowerCase().includes(t)||(j.permit||'').toLowerCase().includes(t);}
 function renderJobs(){
-  let f=jobs.filter(j=>j.status!=='complete');
+  let f=S.jobs.filter(j=>j.status!=='complete').sort(houseSort);
   if(jobFilter!=='all')f=f.filter(j=>j.status===jobFilter);
-  if(jobSearch){const t=jobSearch.toLowerCase();f=f.filter(j=>j.address.toLowerCase().includes(t)||(j.subdivision||'').toLowerCase().includes(t));}
-  const grid=document.getElementById('jobs-grid');const empty=document.getElementById('jobs-empty');
-  if(!f.length){grid.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  const sl={active:'Active',complete:'Complete',pending:'Pending',warranty:'Warranty'};
-  grid.innerHTML=f.map(job=>{
-    const done=job.phases.filter(p=>p.status==='done').length;const inp=job.phases.filter(p=>p.status==='inprogress').length;
-    const lastLog=job.log&&job.log.length?job.log[job.log.length-1]:null;
-    const workers=[...new Set((job.log||[]).map(l=>l.worker))].slice(0,4);
-    return`<div class="job-card" onclick="openDetail('${job.id}')"><div class="job-card-header"><div><div class="job-address">${job.address}</div><div class="job-lot">${[job.subdivision,job.lot].filter(Boolean).join(' · ')||'No subdivision'}</div></div><span class="status-badge status-${job.status}">${sl[job.status]||job.status}</span></div><div class="job-card-body"><div class="phases-label">Phases — ${done}/${PHASES.length} complete${inp?`, ${inp} in progress`:''}</div><div class="phases-row">${job.phases.map(p=>`<span class="phase-chip ${p.status==='done'?'done':p.status==='inprogress'?'inprogress':''}">${p.name}</span>`).join('')}</div></div><div class="job-card-footer"><span class="last-visit">${lastLog?'📅 Last: '+fmtDate(lastLog.date):'No visits logged'}</span><div class="worker-avatars">${workers.map(w=>`<div class="worker-avatar">${getInitials(w)}</div>`).join('')}</div></div></div>`;
-  }).join('');
+  if(jobSearch)f=f.filter(j=>matchJob(j,jobSearch));
+  $('jobs-grid').innerHTML=f.map(jobCard).join('');
+  $('jobs-empty').style.display=f.length?'none':'block';
+}
+function renderCompleted(){
+  let f=S.jobs.filter(j=>j.status==='complete').sort(houseSort);
+  $('completed-count').textContent=f.length+' completed';
+  if(completedSearch)f=f.filter(j=>matchJob(j,completedSearch));
+  $('completed-grid').innerHTML=f.map(jobCard).join('');
+  $('completed-empty').style.display=f.length?'none':'block';
 }
 
-function openDetail(id){currentJobId=id;renderDetail();document.getElementById('detail-view').classList.add('open');}
-function closeDetail(){document.getElementById('detail-view').classList.remove('open');currentJobId=null;}
-
+// ---------- House detail
+function openDetail(id){currentJobId=id;workDate='';renderDetail();const v=$('detail-view');v.classList.add('open');v.scrollTop=0;loadPhotos(id);}
+function closeDetail(){$('detail-view').classList.remove('open');currentJobId=null;workDate='';render();}
 function renderDetail(){
+  const job=getJob(currentJobId);if(!job){$('detail-view').classList.remove('open');currentJobId=null;return;}
+  const own=isOwner();
+  const t=$('detail-title');t.innerHTML='<span class="pin">📍</span>'+esc(job.address);t.href=mapsUrl(job);
+  $('detail-meta').textContent=[cityFull(job.city),job.zip,job.subdivision,job.lot].filter(Boolean).join(' · ')||'Tap the address to open Maps';
+  let h='';
+  const fails=openFails(job);
+  if(fails.length)h+='<div class="fail-box">'+fails.map(f=>'<div><b>✕ '+esc(f.label)+' inspection failed '+esc(fmtShort(f.entry.date))+'</b>'+(f.entry.note?': '+esc(f.entry.note):'')+'</div>').join('')+'</div>';
+  h+='<div class="action-row"><a class="btn btn-outline" href="'+esc(mapsUrl(job))+'" target="_blank" rel="noopener">📍 Open in Maps</a><button class="btn btn-outline" onclick="pickPhotos()">📷 Add Photos</button><button class="btn btn-outline" onclick="openLogModal()">+ Log Visit</button>'+
+    (own?'<button class="btn btn-outline" onclick="openJobModal(\''+job.id+'\')">✎ Edit</button><button class="btn '+(job.status==='complete'?'btn-outline':'btn-green')+'" onclick="toggleComplete()">'+(job.status==='complete'?'↩ Reactivate':'✓ Mark Complete')+'</button>':'')+'</div>';
+  // project number and city inspection
+  const iu=inspUrlFor(job);
+  h+='<div class="full-card"><div class="full-card-title">Project number</div><div class="project-row">'+
+    (job.permit?'<span class="project-num" id="project-num">'+esc(job.permit)+'</span><button class="btn btn-outline btn-sm" onclick="copyProject()">Copy</button>':'<span class="muted">No project number yet.</span>'+(own?'<button class="btn btn-outline btn-sm" onclick="openJobModal(\''+job.id+'\')">Add it</button>':''))+
+    (iu?'<a class="btn btn-primary btn-sm" href="'+esc(iu)+'" target="_blank" rel="noopener" onclick="copyProject(true)">City Inspection ↗</a>':own?'<button class="btn btn-outline btn-sm" onclick="openInspLinkModal()">+ Add city inspection link</button>':'')+
+    (iu&&own?'<button class="icon-btn" title="Change link" onclick="openInspLinkModal()">✎</button>':'')+'</div>'+
+    (iu&&job.permit?'<div class="form-hint">City Inspection copies the project number and opens the city site, so you can paste it there.</div>':'')+'</div>';
+  h+=workDateBar();
+  // checklist
+  const p=checklistProgress(job);
+  h+='<div class="full-card"><div class="full-card-title">✅ House checklist <span>'+p.done+' of '+p.total+' done</span></div>'+
+    ((job.checklist||[]).map(it=>checklistRow(job,it,false)).join('')||'<div class="muted" style="padding:6px 0">No checklist items yet.</div>');
+  if(own)h+='<div class="add-row"><input class="form-input" id="new-item-text" placeholder="Add a to do for this house..." onkeydown="if(event.key===\'Enter\')addItem()"><button class="btn btn-primary" onclick="addItem()">Add</button><button class="btn btn-outline" onclick="openItemModal(\''+job.id+'\')">Add with details</button>'+((job.checklist||[]).length?'':'<button class="btn btn-outline" onclick="addStarter()">Add starter list</button>')+'</div>';
+  else h+='<div class="form-hint" style="margin-top:8px">Check off anything you finished, even if it was not assigned to you.</div>';
+  h+='</div>';
+  // inspections
+  h+='<div class="full-card"><div class="full-card-title">🔍 Inspections'+(own?'':'<span>Entered by the office</span>')+'</div><table class="insp-table"><tbody>'+INSP_KEYS.map((k,i)=>{
+    const entries=(job.inspLog||[]).filter(e=>e.key===k).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    const l=latestInsp(job,k);
+    const status=!l?'<span class="muted">Not yet</span>':l.result==='fail'?'<span class="insp-fail">✕ FAILED '+esc(fmtDate(l.date))+'</span>':'<span class="insp-pass">✓ Passed '+esc(fmtDate(l.date))+'</span>';
+    const hist=entries.length>1||(l&&(l.result==='fail'||l.note))?entries.map(e=>'<div class="insp-hist"><span class="'+(e.result==='fail'?'f':'')+'">'+(e.result==='fail'?'✕ Failed ':'✓ Passed ')+esc(fmtShort(e.date))+'</span>'+(e.note?': '+esc(e.note):'')+(e.byName?' <span class="muted">('+esc(e.byName)+(own&&e.ts&&tsDate(e.ts)!==e.date?', entered '+esc(fmtShort(tsDate(e.ts))):'')+')</span>':'')+(own?' <a href="#" onclick="delInsp(\''+e.id+'\');return false" style="color:var(--ink-faint)">remove</a>':'')+'</div>').join(''):(own&&l?'<div class="insp-hist"><a href="#" onclick="delInsp(\''+l.id+'\');return false" style="color:var(--ink-faint)">remove</a></div>':'');
+    return '<tr><td class="insp-type">'+INSP_LABELS[i]+'</td><td>'+status+hist+'</td>'+(own?'<td style="text-align:right;white-space:nowrap"><button class="btn btn-sm btn-green" onclick="openInspModal(\''+k+'\',\'pass\')">Passed</button> <button class="btn btn-sm btn-red" onclick="openInspModal(\''+k+'\',\'fail\')">Failed</button></td>':'')+'</tr>';
+  }).join('')+'</tbody></table></div>';
+  // phases
+  h+='<div class="full-card"><div class="full-card-title">Phase progress</div>'+job.phases.map((ph,i)=>'<div class="phase-row '+(ph.status==='done'?'done':ph.status==='inprogress'?'inprogress':'')+'"><span class="phase-name">'+esc(ph.name)+'</span>'+(ph.date?'<span class="phase-date">'+esc(fmtShort(ph.date))+(ph.by?' · '+esc(ph.by):'')+'</span>':'')+'<select class="phase-status-select" onchange="setPhase('+i+',this.value)"><option value="pending"'+(ph.status==='pending'?' selected':'')+'>Pending</option><option value="inprogress"'+(ph.status==='inprogress'?' selected':'')+'>In progress</option><option value="done"'+(ph.status==='done'?' selected':'')+'>Done</option></select></div>').join('')+'</div>';
+  // photos
+  h+='<div class="full-card"><div class="full-card-title">📷 Photos <button class="btn btn-primary btn-sm" onclick="pickPhotos()">+ Add Photos</button></div><div class="add-row" style="margin:0 0 10px"><select class="form-select" id="photo-phase" style="max-width:220px"><option value="">Phase (optional)</option>'+PHASES.slice(0,5).map(x=>'<option>'+x+'</option>').join('')+'</select></div><div id="upload-list"></div><div id="photo-area"></div></div>';
+  // documents
+  h+='<div class="full-card"><div class="full-card-title">📄 Documents'+(own?'<span style="font-weight:400;text-transform:none">Paste Google Drive share links</span>':'')+'</div><div class="doc-slots-grid">'+DOC_KEYS.map((k,i)=>{
+    const url=safeUrl((job.docs||{})[k]);
+    return '<div class="doc-tile'+(url?' has-link':'')+'"><div class="doc-tile-icon">'+DOC_ICONS[i]+'</div><div class="doc-tile-label">'+DOC_LABELS[i]+'</div>'+
+      (own?'<input class="doc-tile-input" id="doc-'+k+'" placeholder="Paste link..." value="'+esc((job.docs||{})[k]||'')+'">':'')+
+      '<div class="doc-tile-btns">'+(own?'<button class="btn btn-outline btn-sm" onclick="saveDoc(\''+k+'\')">Save</button>':'')+(url?'<a class="btn btn-primary btn-sm" href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>':own?'':'<span class="muted">None yet</span>')+'</div></div>';
+  }).join('')+'</div></div>';
+  // fixtures
+  h+='<div class="full-card"><div class="full-card-title">🔧 Fixtures installed</div>'+((job.fixtures||[]).map(f=>'<div class="fixture-row"><span class="fixture-name">'+esc(f.name)+'</span><span class="muted">'+esc(f.phase||'')+(f.byName?' · '+esc(f.byName):'')+(f.date?' · '+esc(fmtShort(f.date)):'')+'</span>'+(own||f.by===S.me.id?'<button class="icon-btn" onclick="delFixture(\''+f.id+'\')">✕</button>':'')+'</div>').join('')||'<div class="muted">No fixtures added yet</div>')+
+    '<div class="add-row"><input class="form-input" id="fixture-name" placeholder="Fixture name..." onkeydown="if(event.key===\'Enter\')addFixture()"><select class="form-select" id="fixture-phase" style="max-width:130px"><option>Ground</option><option>Rough-in</option><option>Top out</option><option>Trim</option><option>Final</option></select><button class="btn btn-outline" onclick="addFixture()">Add</button></div></div>';
+  // work log
+  h+='<div class="full-card"><div class="full-card-title">👷 Work log <button class="btn btn-outline btn-sm" onclick="openLogModal()">+ Log Visit</button></div>'+(((job.log||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)).map(l=>'<div class="log-entry"><div class="log-avatar">'+esc(getInitials(l.worker))+'</div><div class="log-info"><div class="log-worker">'+esc(l.worker)+'</div><div class="log-detail">'+esc(l.phase||'')+'</div>'+(l.notes?'<div class="log-notes">'+esc(l.notes)+'</div>':'')+'</div><div class="log-date">'+esc(fmtDate(l.date))+(own&&l.ts&&tsDate(l.ts)!==l.date?'<br>entered '+esc(fmtShort(tsDate(l.ts))):'')+(own||l.workerId===S.me.id?'<br><a href="#" onclick="delLog(\''+l.id+'\');return false" style="color:var(--ink-faint)">remove</a>':'')+'</div></div>').join('')||'<div class="muted">No visits logged yet</div>')+'</div>';
+  // info
+  h+='<div class="full-card"><div class="full-card-title">House info</div><div style="font-size:14px;line-height:1.7"><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span>'+(job.completedDate?' <span class="muted">completed '+esc(fmtDate(job.completedDate))+'</span>':'')+
+    (job.subdivision?'<div><span class="muted">Subdivision</span> '+esc(job.subdivision)+'</div>':'')+(job.lot?'<div><span class="muted">Lot</span> '+esc(job.lot)+'</div>':'')+(job.notes?'<div><span class="muted">Notes</span> '+esc(job.notes)+'</div>':'')+
+    '<div style="margin-top:6px">'+(job.pin?'<span class="muted">📍 Map pin saved for this house.</span> '+(own?'<a href="#" onclick="setPin(\'\');return false">remove pin</a>':''):'<button class="btn btn-outline btn-sm" onclick="dropPin()">📍 Street not in Maps? Save a pin from where I am standing</button>')+'</div></div></div>';
+  const keep={};['new-item-text','fixture-name','photo-phase','fixture-phase'].forEach(id=>{const el=$(id);if(el)keep[id]=el.value;});
+  DOC_KEYS.forEach(k=>{const el=$('doc-'+k);if(el&&document.activeElement===el)keep['doc-'+k]=el.value;});
+  $('detail-body').innerHTML=h;
+  Object.keys(keep).forEach(id=>{const el=$(id);if(el&&keep[id]!=null)el.value=keep[id];});
+  renderUploads();renderPhotos();
+}
+function jobOp(op,args,local){return mutate('jobOp',{jobId:currentJobId,op,args:args||{}},local);}
+function copyText(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text).then(()=>true,()=>fallbackCopy(text));
+  return Promise.resolve(fallbackCopy(text));
+}
+function fallbackCopy(text){try{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok;}catch(e){return false;}}
+function copyProject(quiet){const job=getJob(currentJobId);if(!job||!job.permit)return;copyText(job.permit).then(ok=>{toast(ok?'Project number '+job.permit+' copied'+(quiet?'. Paste it on the city page.':''):'Could not copy. Press and hold the number to copy it.',!ok);});}
+function addItem(){const el=$('new-item-text');const text=el.value.trim();if(!text)return;el.value='';jobOp('itemAdd',{itemId:genId('c_'),text,qty:1});}
+function addStarter(){jobOp('starter');}
+function userOptions(sel,blank){return (blank!=null?'<option value="">'+esc(blank)+'</option>':'')+activeUsers().map(u=>'<option value="'+esc(u.id)+'"'+(u.id===sel?' selected':'')+'>'+esc(u.name)+'</option>').join('');}
+function openItemModal(jobId,itemId){
+  const job=getJob(jobId);const it=itemId?job.checklist.find(x=>x.id===itemId):null;
+  openModal({title:it?'Edit checklist item':'Add checklist item',body:
+    '<div class="form-group"><label class="form-label">What needs to be done</label><input class="form-input" id="it-text" data-focus value="'+esc(it?it.text:($('new-item-text')?$('new-item-text').value:''))+'"></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">How many</label><input class="form-input" id="it-qty" type="number" min="1" max="99" value="'+(it?Number(it.qty)||1:1)+'"><div class="form-hint">Use more than 1 for counts, like 5 toilets.</div></div>'+
+    '<div class="form-group"><label class="form-label">Assign to (optional)</label><select class="form-select" id="it-assignee">'+userOptions(it?it.assignee:'','Nobody, anyone can do it')+'</select></div></div>'+
+    '<div class="form-group"><label class="form-label">Due date (optional)</label><input class="form-input" id="it-due" type="date" value="'+esc(it?it.due||'':'')+'"><div class="form-hint">Only the person assigned sees the assignment. Everyone sees the item and who checked it off.</div></div>',
+    buttons:(it?[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete "'+it.text+'" from this house?'))return;closeModal();mutate('jobOp',{jobId,op:'itemDel',args:{itemId}});}}]:[]).concat([{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const args={itemId:it?it.id:genId('c_'),text:$('it-text').value.trim(),qty:Number($('it-qty').value)||1,assignee:$('it-assignee').value,due:$('it-due').value};
+      if(!args.text){toast('Type what needs to be done.',true);return;}
+      if(!it&&$('new-item-text'))$('new-item-text').value='';
+      closeModal();mutate('jobOp',{jobId,op:it?'itemEdit':'itemAdd',args});}}])});
+}
+function openInspModal(key,result){
+  const label=INSP_LABELS[INSP_KEYS.indexOf(key)];
+  openModal({title:label+' inspection: '+(result==='fail'?'Failed':'Passed'),body:
+    '<div class="form-group"><label class="form-label">Date of the inspection</label><input class="form-input" id="insp-date" type="date" max="'+todayStr()+'" value="'+todayStr()+'"></div>'+
+    '<div class="form-group"><label class="form-label">'+(result==='fail'?'Why did it fail?':'Note (optional)')+'</label><textarea class="form-textarea" id="insp-note" '+(result==='fail'?'data-focus ':'')+'placeholder="'+(result==='fail'?'Example: missing nail plates in the upstairs bath':'')+'"></textarea></div>'+
+    (result==='fail'?'<div class="form-hint">The house shows in red until a passed inspection is entered. The failure stays in the history.</div>':''),
+    buttons:[{label:'Cancel',fn:closeModal},{label:result==='fail'?'Save as Failed':'Save as Passed',cls:result==='fail'?'btn-red':'btn-green',fn:()=>{
+      const date=$('insp-date').value,note=$('insp-note').value.trim();
+      if(!date){toast('Pick the date.',true);return;}
+      if(result==='fail'&&!note){toast('Add a note saying why it failed.',true);return;}
+      closeModal();jobOp('insp',{entryId:genId('i_'),key,result,date,note});}}]});
+}
+function delInsp(entryId){if(!confirm('Remove this inspection entry?'))return;jobOp('inspDel',{entryId});}
+function setPhase(idx,status){jobOp('phase',{idx,status,date:wd()});}
+function saveDoc(key){const url=$('doc-'+key).value.trim();if(url&&!safeUrl(url)){toast('Links must start with https://',true);return;}jobOp('docs',{key,url});}
+function addFixture(){const el=$('fixture-name');const name=el.value.trim();if(!name)return;const phase=$('fixture-phase').value;el.value='';jobOp('fixtureAdd',{id:genId('f_'),name,phase,date:wd()});}
+function delFixture(id){if(!confirm('Remove this fixture?'))return;jobOp('fixtureDel',{id});}
+function delLog(id){if(!confirm('Remove this visit from the log?'))return;jobOp('logDel',{id});}
+function openLogModal(){
+  const own=isOwner();
+  openModal({title:'Log work visit',body:
+    '<div class="form-row"><div class="form-group"><label class="form-label">Worker</label>'+(own?'<select class="form-select" id="log-worker">'+activeUsers().map(u=>'<option'+(u.id===S.me.id?' selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select>':'<input class="form-input" value="'+esc(S.me.name)+'" disabled>')+'</div>'+
+    '<div class="form-group"><label class="form-label">Date</label><input class="form-input" id="log-date" type="date" max="'+todayStr()+'" value="'+wd()+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">Phase</label><select class="form-select" id="log-phase">'+PHASES.map(x=>'<option>'+x+'</option>').join('')+'<option>General</option></select></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="log-notes" data-focus placeholder="What was done..."></textarea></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const args={id:genId('l_'),date:$('log-date').value||todayStr(),phase:$('log-phase').value,notes:$('log-notes').value.trim()};
+      if(own)args.worker=$('log-worker').value;
+      closeModal();jobOp('logAdd',args);}}]});
+}
+function toggleComplete(){
   const job=getJob(currentJobId);if(!job)return;
-  document.getElementById('detail-title').textContent=job.address;
-  document.getElementById('detail-meta').textContent=[job.subdivision,job.lot,job.city].filter(Boolean).join(' · ')||'No additional info';
-  // Update complete button
-  const cb=document.getElementById('complete-btn');
-  if(job.status==='complete'){cb.textContent='↩ Reactivate Job';cb.style.background='var(--ink-light)';}
-  else{cb.textContent='✓ Mark Complete';cb.style.background='var(--green)';}
-  document.getElementById('blueprint-url') && (document.getElementById('blueprint-url').value = job.blueprint||'');
-  renderDocSlots();
-  // Migrate old blueprint to new docs if needed
-  if(job.blueprint && (!job.docs || !job.docs.blueprint)){if(!job.docs)job.docs={};job.docs.blueprint=job.blueprint;}
-  renderDocSlots();
-  const insp=job.inspections||{};
-  document.getElementById('detail-insp-body').innerHTML=INSP_KEYS.map((k,i)=>{
-    const v=insp[k]||'';
-    return`<tr><td class="insp-type">${INSP_LABELS[i]}</td><td>${v?`<span class="insp-done">✓ ${fmtDate(v)}</span>`:`<input class="insp-input" type="date" onchange="updateInspDate('${k}',this.value)">`}</td><td>${v?`<button style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:white;cursor:pointer;color:var(--ink-light)" onclick="clearInspDate('${k}')">Clear</button>`:''}</td></tr>`;
-  }).join('');
-  document.getElementById('detail-phases').innerHTML=job.phases.map((p,i)=>`<div class="phase-row ${p.status==='done'?'done':p.status==='inprogress'?'inprogress':''}"><div class="phase-check" onclick="cyclePhase('${job.id}',${i})">${p.status==='done'?'✓':p.status==='inprogress'?'●':''}</div><span class="phase-name">${p.name}</span>${p.date?`<span class="phase-date">${fmtDate(p.date)}</span>`:''}<select class="phase-status-select" onchange="setPhaseStatus('${job.id}',${i},this.value)"><option value="pending" ${p.status==='pending'?'selected':''}>Pending</option><option value="inprogress" ${p.status==='inprogress'?'selected':''}>In Progress</option><option value="done" ${p.status==='done'?'selected':''}>Done</option></select></div>`).join('');
-  const sl={active:'Active',complete:'Complete',pending:'Pending',warranty:'Warranty'};
-  document.getElementById('detail-info').innerHTML=`<div style="display:grid;gap:8px"><div><div style="font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Status</div><span class="status-badge status-${job.status}">${sl[job.status]||job.status}</span></div>${job.permit?`<div><div style="font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Permit</div><div style="font-size:12px;font-family:monospace">${job.permit}</div></div>`:''} ${job.subdivision?`<div><div style="font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Subdivision</div><div style="font-size:13px;font-weight:500">${job.subdivision}</div></div>`:''} ${job.notes?`<div><div style="font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Notes</div><div style="font-size:12px;color:var(--ink-light)">${job.notes}</div></div>`:''}<div><div style="font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Total Visits</div><div style="font-size:13px;font-weight:500">${(job.log||[]).length} visits</div></div></div>`;
-  renderFixtures();renderLog();
+  if(job.status==='complete'){if(!confirm('Move "'+job.address+'" back to Active?'))return;jobOp('status',{status:'active'});}
+  else{if(!confirm('Mark "'+job.address+'" complete? It moves to the Completed tab and its history is kept.'))return;jobOp('status',{status:'complete',date:todayStr()});}
+}
+function openJobModal(id){
+  const job=id?getJob(id):null;const v=k=>esc(job?job[k]||'':'');
+  openModal({title:job?'Edit house':'Add new house',body:
+    '<div class="form-row"><div class="form-group" style="flex:2"><label class="form-label">Street address</label><input class="form-input" id="nj-address" '+(job?'':'data-focus ')+'value="'+v('address')+'" placeholder="1234 Oak Lane"></div><div class="form-group"><label class="form-label">Project #</label><input class="form-input" id="nj-permit" inputmode="numeric" value="'+v('permit')+'"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">City</label><input class="form-input" id="nj-city" value="'+esc(job?job.city||'':'HOU TX')+'" list="city-list"><datalist id="city-list">'+knownCities().map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist></div><div class="form-group"><label class="form-label">Zip</label><input class="form-input" id="nj-zip" inputmode="numeric" value="'+v('zip')+'"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Subdivision</label><input class="form-input" id="nj-subdivision" value="'+v('subdivision')+'"></div><div class="form-group"><label class="form-label">Lot / Unit</label><input class="form-input" id="nj-lot" value="'+v('lot')+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">Status</label><select class="form-select" id="nj-status">'+['active','pending','warranty','complete'].map(s=>'<option value="'+s+'"'+((job?job.status:'active')===s?' selected':'')+'>'+STATUS_LABELS[s]+'</option>').join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label">City inspection link for this house only (optional)</label><input class="form-input" id="nj-inspurl" value="'+v('inspUrl')+'" placeholder="Leave blank to use the link for its city"></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="nj-notes">'+v('notes')+'</textarea></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:job?'Save changes':'Add house',cls:'btn-primary',fn:()=>{
+      const a={address:$('nj-address').value.trim(),permit:$('nj-permit').value.trim(),city:$('nj-city').value.trim(),zip:$('nj-zip').value.trim(),subdivision:$('nj-subdivision').value.trim(),lot:$('nj-lot').value.trim(),status:$('nj-status').value,inspUrl:$('nj-inspurl').value.trim(),notes:$('nj-notes').value.trim()};
+      if(!a.address){toast('Enter the street address.',true);return;}
+      if(a.inspUrl&&!safeUrl(a.inspUrl)){toast('The link must start with https://',true);return;}
+      closeModal();
+      if(job)mutate('jobOp',{jobId:job.id,op:'info',args:a});
+      else{a.id=genId('j_');mutate('jobCreate',{job:a});}
+    }}]});
+}
+function knownCities(){const s={};S.jobs.forEach(j=>{const c=cityKey(j.city);if(c)s[c]=1;});Object.keys(S.settings.inspLinks||{}).forEach(c=>{s[c]=1;});return Object.keys(s).sort();}
+function openInspLinkModal(){
+  const job=getJob(currentJobId);const city=cityKey(job.city);
+  openModal({title:'City inspection link',body:
+    '<div class="form-group"><label class="form-label">Link to the city inspection site</label><input class="form-input" id="il-url" data-focus value="'+esc(inspUrlFor(job))+'" placeholder="https://..."></div>'+
+    '<div class="form-group"><label class="form-label">Use this link for</label><select class="form-select" id="il-scope">'+(city?'<option value="city">All houses in '+esc(city)+'</option>':'')+'<option value="house"'+(job.inspUrl?' selected':'')+'>Only this house</option></select></div>'+
+    '<div class="form-hint">Paste the page where you type in the project number.</div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const url=$('il-url').value.trim(),scope=$('il-scope').value;
+      if(url&&!safeUrl(url)){toast('The link must start with https://',true);return;}
+      closeModal();
+      if(scope==='city'){const links=Object.assign({},S.settings.inspLinks);if(url)links[city]=url;else delete links[city];mutate('settingsSave',{inspLinks:links},()=>{S.settings.inspLinks=links;});if(job.inspUrl)jobOp('info',{inspUrl:''});}
+      else jobOp('info',{inspUrl:url});
+    }}]});
+}
+function dropPin(){
+  if(!navigator.geolocation){toast('This device cannot share its location.',true);return;}
+  if(!confirm('Save a map pin for this house using where you are standing right now?'))return;
+  navigator.geolocation.getCurrentPosition(p=>setPin(p.coords.latitude.toFixed(6)+','+p.coords.longitude.toFixed(6)),()=>toast('Could not get your location. Allow location access and try again.',true),{enableHighAccuracy:true,timeout:15000});
+}
+function setPin(pin){jobOp('pin',{pin});}
+
+// ---------- photos
+async function loadPhotos(jobId,force){
+  if(photoCache[jobId]&&!force)return;
+  try{const d=await api('photos',{jobId});photoCache[jobId]=d.photos;S.photoCounts[jobId]=d.photos.length;if(currentJobId===jobId)renderPhotos();}
+  catch(e){if(currentJobId===jobId&&!photoCache[jobId]){const a=$('photo-area');if(a)a.innerHTML='<div class="muted">Photos could not load'+(e.code==='offline'?' (no signal)':'')+'. <a href="#" onclick="loadPhotos(\''+jobId+'\',true);return false">Try again</a></div>';}}
+}
+function renderPhotos(){
+  const a=$('photo-area');if(!a||!currentJobId)return;
+  const list=photoCache[currentJobId];
+  if(!list){a.innerHTML='<div class="muted">Loading photos...</div>';return;}
+  if(!list.length){a.innerHTML='<div class="muted">No photos yet. Everyone on the team can see photos added here.</div>';return;}
+  a.innerHTML='<div class="photo-grid">'+list.slice().reverse().map(p=>'<div class="photo-thumb" onclick="viewPhoto(\''+p.id+'\')">'+(p.thumb?'<img alt="" src="data:image/jpeg;base64,'+p.thumb+'">':'')+'<span>'+esc(p.userName)+' · '+esc(fmtShort(p.date))+'</span></div>').join('')+'</div>';
+}
+function pickPhotos(){const i=$('photo-input');i.value='';i.click();}
+function loadImage(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);res(img);};img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('bad image'));};img.src=url;});}
+function shrink(img,max,q){const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.naturalWidth*s));c.height=Math.max(1,Math.round(img.naturalHeight*s));c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q).split(',')[1];}
+function photoFilesPicked(input){
+  const jobId=currentJobId;if(!jobId)return;
+  const phaseEl=$('photo-phase');const phase=phaseEl?phaseEl.value:'';const date=wd();
+  [...input.files].slice(0,12).forEach(file=>{const u={id:genId('p_'),jobId,file,name:file.name,phase,date,state:'waiting'};uploads.push(u);});
+  if(input.files.length>12)toast('Only the first 12 photos were added. Upload the rest in a second batch.',true);
+  renderUploads();runUploads();
+}
+let uploading=false;
+async function runUploads(){
+  if(uploading)return;uploading=true;
+  for(;;){
+    const u=uploads.find(x=>x.state==='waiting');if(!u)break;
+    u.state='sending';renderUploads();
+    try{
+      if(!u.data){const img=await loadImage(u.file);u.data=shrink(img,1600,0.72);u.thumb=shrink(img,200,0.55);}
+      const d=await api('photoAdd',{opId:u.id,photo:{id:u.id,jobId:u.jobId,date:u.date,phase:u.phase},data:u.data,thumb:u.thumb},120000);
+      u.state='done';u.data=null;u.file=null;
+      if(d.photo){(photoCache[u.jobId]=photoCache[u.jobId]||[]).push(d.photo);S.photoCounts[u.jobId]=(S.photoCounts[u.jobId]||0)+1;}
+      else loadPhotos(u.jobId,true);
+    }catch(e){u.state='failed';u.error=e.code==='offline'?'No signal':e.message;if(e.code==='auth'){uploading=false;authLost(e.message);return;}}
+    renderUploads();if(currentJobId===u.jobId)renderPhotos();
+  }
+  uploading=false;
+}
+function retryUpload(id){const u=uploads.find(x=>x.id===id);if(u){u.state='waiting';renderUploads();runUploads();}}
+function renderUploads(){
+  const el=$('upload-list');if(!el)return;
+  const list=uploads.filter(u=>u.jobId===currentJobId&&(u.state!=='done'||Date.now()-(u.doneAt||(u.doneAt=Date.now()))<60000));
+  el.innerHTML=list.map(u=>'<div class="up-row"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(u.name||'Photo')+'</span>'+
+    (u.state==='done'?'<span class="ok">✓ Uploaded</span>':u.state==='failed'?'<span class="bad">✕ '+esc(u.error||'Failed')+'</span><button class="btn btn-sm btn-primary" onclick="retryUpload(\''+u.id+'\')">Retry</button>':u.state==='sending'?'<span class="muted">Uploading...</span>':'<span class="muted">Waiting</span>')+'</div>').join('');
+}
+async function viewPhoto(id){
+  const p=(photoCache[currentJobId]||[]).find(x=>x.id===id);if(!p)return;
+  const meta='<div class="muted" style="margin-top:8px;text-align:center">'+esc(p.userName)+' · '+esc(fmtDate(p.date))+(p.phase?' · '+esc(p.phase):'')+(isOwner()&&p.ts&&tsDate(p.ts)!==p.date?' · uploaded '+esc(fmtShort(tsDate(p.ts))):'')+'</div>';
+  const buttons=[{label:'Close',cls:'btn-primary',fn:closeModal}];
+  if(isOwner())buttons.unshift({label:'Delete photo',cls:'btn-red',fn:async()=>{if(!confirm('Delete this photo for everyone? It moves to the Drive trash.'))return;closeModal();try{await api('photoDel',{opId:genId('o_'),id});photoCache[currentJobId]=(photoCache[currentJobId]||[]).filter(x=>x.id!==id);S.photoCounts[currentJobId]=photoCache[currentJobId].length;renderPhotos();toast('Photo deleted');}catch(e){toast(e.message,true);}}});
+  openModal({title:'Photo',body:'<div class="viewer" id="viewer">'+(p.thumb?'<img alt="" style="width:100%;filter:blur(2px)" src="data:image/jpeg;base64,'+p.thumb+'">':'<div class="muted">Loading...</div>')+'</div>'+meta+'<div id="viewer-link" style="text-align:center;margin-top:6px"></div>',buttons});
+  try{const d=await api('photoGet',{id},90000);const v=$('viewer');if(v&&modalOpen()){v.innerHTML='<img alt="Job photo" src="data:image/jpeg;base64,'+d.data+'">';if(d.url&&safeUrl(d.url))$('viewer-link').innerHTML='<a href="'+esc(d.url)+'" target="_blank" rel="noopener">Open in Google Drive ↗</a>';}}
+  catch(e){const v=$('viewer-link');if(v)v.innerHTML='<span class="muted">Full size photo could not load'+(e.code==='offline'?' (no signal)':'')+'.</span>';}
 }
 
-function updateInspDate(key,val){
-  const job=getJob(currentJobId);if(!job.inspections)job.inspections={};job.inspections[key]=val;
-  const home=homes.find(h=>h.address===job.address);if(home)home.inspections[key]=val;
-  save();renderDetail();renderInspections();updateStats();
+// ---------- Team & To Dos (owners)
+function renderTeam(){
+  if(!isOwner()){$('team-body').innerHTML='';return;}
+  const today=todayStr();const d=teamDate||today;
+  const people=activeUsers().slice().sort((a,b)=>(a.role===b.role?0:a.role==='employee'?-1:1));
+  const jobOpts='<option value="">No house</option>'+S.jobs.filter(j=>j.status!=='complete').sort(houseSort).map(j=>'<option value="'+j.id+'">'+esc(j.address)+'</option>').join('');
+  let h='<div class="section-title">Daily to do lists</div><div class="toolbar no-print" style="justify-content:flex-start"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,-1)+'\')">◀</button><input type="date" class="search-input" style="max-width:170px;flex:none" value="'+d+'" onchange="setTeamDate(this.value)"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,1)+'\')">▶</button>'+(d!==today?'<button class="btn btn-outline" onclick="setTeamDate(\'\')">Today</button>':'')+'<b>'+esc(fmtDay(d))+'</b><span class="muted">Each person sees only their own list.</span></div><div class="team-grid">';
+  people.forEach(u=>{
+    const mine=S.tasks.filter(t=>t.assigneeId===u.id);
+    const late=d===today?mine.filter(t=>!t.done&&t.date<today):[];
+    const day=mine.filter(t=>t.date===d);
+    const items=[];S.jobs.forEach(j=>{if(j.status==='complete')return;(j.checklist||[]).forEach(it=>{if(it.assignee===u.id&&(it.due===d||(d===today&&it.due&&it.due<today&&itemDone(it)<(Number(it.qty)||1))))items.push({j,it});});});
+    const open=day.filter(t=>!t.done).length+late.length;
+    h+='<div class="person-card"><div class="person-name"><span>'+esc(u.name)+(u.role==='owner'?' <span class="chip chip-grey">owner</span>':'')+'</span><span class="muted">'+open+' open</span></div>'+
+      late.map(t=>taskRow(t,true)).join('')+day.map(t=>taskRow(t,true)).join('')+
+      items.map(x=>'<div class="cl-row'+(itemDone(x.it)>=(Number(x.it.qty)||1)?' done':'')+'"><div class="cl-box'+(itemDone(x.it)>=(Number(x.it.qty)||1)?' on':'')+'" style="cursor:default">'+(itemDone(x.it)>=(Number(x.it.qty)||1)?'✓':'')+'</div><div class="cl-main"><div class="cl-text">'+esc(x.it.text)+'</div><div class="cl-sub"><span class="house-link" onclick="openDetail(\''+x.j.id+'\')">'+esc(x.j.address)+'</span><span class="chip chip-grey">house checklist</span>'+(x.it.due<today&&itemDone(x.it)<(Number(x.it.qty)||1)?'<span class="chip chip-red">past due</span>':'')+'</div></div></div>').join('')+
+      (!late.length&&!day.length&&!items.length?'<div class="muted" style="padding:6px 0">Nothing assigned for this day.</div>':'')+
+      '<div class="add-row"><input class="form-input" id="tt-'+u.id+'" placeholder="Add a to do for '+esc(u.name)+'..." onkeydown="if(event.key===\'Enter\')addTask(\''+u.id+'\')"><select class="form-select" id="tj-'+u.id+'" style="max-width:150px">'+jobOpts+'</select><button class="btn btn-primary" onclick="addTask(\''+u.id+'\')">Add</button></div></div>';
+  });
+  h+='</div>';
+  h+='<div class="section-title">Team and PINs</div><div class="list-card">'+S.users.map(u=>'<div class="user-row"><div style="flex:1;min-width:140px"><b>'+esc(u.name)+'</b> <span class="chip chip-grey">'+esc(u.role)+'</span> '+(u.active?(u.hasPin?'<span class="chip chip-blue">PIN set</span>':'<span class="chip chip-amber">needs a PIN</span>'):'<span class="chip chip-red">turned off</span>')+'</div><button class="btn btn-outline btn-sm" onclick="openPinModal(\''+u.id+'\')">'+(u.hasPin?'Change PIN':'Set PIN')+'</button>'+(u.id===S.me.id?'':'<button class="btn btn-outline btn-sm" onclick="setUserActive(\''+u.id+'\','+(!u.active)+')">'+(u.active?'Turn off':'Turn back on')+'</button>')+'</div>').join('')+
+    '<div class="add-row" style="margin:8px 0"><button class="btn btn-primary" onclick="openAddUserModal()">+ Add a person</button></div><div class="form-hint" style="padding-bottom:8px">Changing a PIN or turning someone off logs their phone out right away. Use that for a lost phone or when someone leaves.</div></div>';
+  h+='<div class="section-title">Settings</div><div class="list-card" style="padding:12px"><div class="form-group"><label class="form-label">Starter checklist for new houses (one item per line)</label><textarea class="form-textarea" id="set-template" oninput="this.dataset.dirty=1" style="min-height:170px">'+esc((S.settings.checklistTemplate||[]).join('\n'))+'</textarea><div class="form-hint">Changing this only affects houses added from now on. Inspections are tracked in their own section, so they do not need to be on this list.</div></div><button class="btn btn-primary" onclick="saveTemplate()">Save starter checklist</button></div>'+
+    '<div class="list-card" style="padding:12px"><label class="form-label">City inspection links</label><div class="form-hint" style="margin-bottom:8px">One link per city. The City Inspection button on each house uses the link for its city.</div>'+knownCities().map((c,i)=>'<div class="form-row" style="margin-bottom:6px;align-items:center"><div style="width:140px;font-weight:600;font-size:13px">'+esc(c)+'</div><input class="form-input" oninput="this.dataset.dirty=1" data-city="'+esc(c)+'" value="'+esc((S.settings.inspLinks||{})[c]||'')+'" placeholder="https://..."></div>').join('')+'<button class="btn btn-primary" style="margin-top:6px" onclick="saveLinks()">Save links</button></div>';
+  const tplEl=$('set-template');const tplKeep=tplEl&&tplEl.value!==(S.settings.checklistTemplate||[]).join('\n')&&tplEl.dataset.dirty?tplEl.value:null;
+  const linkKeep={};document.querySelectorAll('#team-body input[data-city]').forEach(el=>{if(el.dataset.dirty)linkKeep[el.getAttribute('data-city')]=el.value;});
+  $('team-body').innerHTML=h;
+  if(tplKeep!=null){$('set-template').value=tplKeep;$('set-template').dataset.dirty='1';}
+  document.querySelectorAll('#team-body input[data-city]').forEach(el=>{const k=el.getAttribute('data-city');if(k in linkKeep){el.value=linkKeep[k];el.dataset.dirty='1';}});
 }
-function clearInspDate(key){
-  const job=getJob(currentJobId);if(job.inspections)job.inspections[key]='';
-  const home=homes.find(h=>h.address===job.address);if(home)home.inspections[key]='';
-  save();renderDetail();renderInspections();updateStats();
+function setTeamDate(v){teamDate=v;render();}
+function addTask(uid){
+  const el=$('tt-'+uid);const text=el.value.trim();if(!text)return;
+  const task={id:genId('t_'),assigneeId:uid,date:teamDate||todayStr(),text,jobId:$('tj-'+uid).value};el.value='';
+  mutate('taskAdd',{task},()=>{S.tasks.push(Object.assign({done:false,doneDate:'',doneByName:''},task));});
 }
-function cyclePhase(jobId,idx){const job=getJob(jobId);const s=['pending','inprogress','done'];const c=s.indexOf(job.phases[idx].status);job.phases[idx].status=s[(c+1)%3];if(job.phases[idx].status==='done')job.phases[idx].date=new Date().toISOString().split('T')[0];save();renderDetail();renderJobs();}
-function setPhaseStatus(jobId,idx,val){const job=getJob(jobId);job.phases[idx].status=val;if(val==='done')job.phases[idx].date=new Date().toISOString().split('T')[0];save();renderDetail();renderJobs();}
-const DOC_KEYS=['foundation','blueprint','materials','other'];
-const DOC_LABELS=['Foundation','Blueprints','Materials','Other'];
-const DOC_ICONS=['🏗️','📐','📦','📎'];
+function openTaskModal(id){
+  const t=S.tasks.find(x=>x.id===id);if(!t)return;
+  openModal({title:'Edit to do',body:
+    '<div class="form-group"><label class="form-label">To do</label><input class="form-input" id="tk-text" value="'+esc(t.text)+'"></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">For</label><select class="form-select" id="tk-user">'+userOptions(t.assigneeId)+'</select></div><div class="form-group"><label class="form-label">Day</label><input class="form-input" id="tk-date" type="date" value="'+esc(t.date)+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">House (optional)</label><select class="form-select" id="tk-job"><option value="">No house</option>'+S.jobs.filter(j=>j.status!=='complete'||j.id===t.jobId).map(j=>'<option value="'+j.id+'"'+(j.id===t.jobId?' selected':'')+'>'+esc(j.address)+'</option>').join('')+'</select></div>'+
+    (t.done?'<div class="form-hint">Done '+esc(fmtDate(t.doneDate))+(t.doneByName?' by '+esc(t.doneByName):'')+'.</div>':''),
+    buttons:[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete this to do?'))return;closeModal();mutate('taskEdit',{id,remove:true},()=>{S.tasks=S.tasks.filter(x=>x.id!==id);});}},{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const p={id,text:$('tk-text').value.trim(),assigneeId:$('tk-user').value,date:$('tk-date').value,jobId:$('tk-job').value};
+      if(!p.text||!p.date){toast('A to do needs words and a day.',true);return;}
+      closeModal();mutate('taskEdit',p,()=>{Object.assign(t,p);});}}]});
+}
+function openPinModal(uid){
+  const u=S.users.find(x=>x.id===uid);if(!u)return;
+  openModal({title:(u.hasPin?'Change PIN for ':'Set PIN for ')+u.name,body:'<div class="form-group"><label class="form-label">New PIN (4 to 8 numbers)</label><input class="form-input" id="np-1" data-focus type="password" inputmode="numeric" maxlength="8" autocomplete="off"></div><div class="form-group"><label class="form-label">Again</label><input class="form-input" id="np-2" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></div><div class="form-hint">'+(u.id===S.me.id?'Your other devices will need the new PIN.':esc(u.name)+' enters this once on their phone. If they were already logged in, they will be asked for the new PIN.')+'</div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save PIN',cls:'btn-primary',fn:()=>{
+      const a=$('np-1').value.trim(),b=$('np-2').value.trim();
+      if(!/^\d{4,8}$/.test(a)){toast('A PIN is 4 to 8 numbers.',true);return;}
+      if(a!==b){toast('The two PINs do not match.',true);return;}
+      closeModal();mutate('userEdit',{userId:uid,pin:a}).then(ok=>{if(ok)toast('PIN saved for '+u.name);});}}]});
+}
+function setUserActive(uid,on){const u=S.users.find(x=>x.id===uid);if(!u)return;if(!on&&!confirm('Turn off '+u.name+'? Their phone will be logged out and they cannot log back in until you turn them on again.'))return;mutate('userEdit',{userId:uid,active:on});}
+function openAddUserModal(){
+  openModal({title:'Add a person',body:'<div class="form-group"><label class="form-label">Name</label><input class="form-input" id="nu-name" data-focus></div><div class="form-row"><div class="form-group"><label class="form-label">Role</label><select class="form-select" id="nu-role"><option value="employee">Employee</option><option value="owner">Owner (sees everything)</option></select></div><div class="form-group"><label class="form-label">PIN (4 to 8 numbers)</label><input class="form-input" id="nu-pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></div></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Add',cls:'btn-primary',fn:()=>{
+      const name=$('nu-name').value.trim(),pin=$('nu-pin').value.trim(),role=$('nu-role').value;
+      if(!name){toast('Enter a name.',true);return;}
+      if(pin&&!/^\d{4,8}$/.test(pin)){toast('A PIN is 4 to 8 numbers.',true);return;}
+      closeModal();mutate('userAdd',{name,role,pin:pin||undefined});}}]});
+}
+function saveTemplate(){const el=$('set-template');const tpl=el.value.split('\n').map(s=>s.trim()).filter(Boolean);delete el.dataset.dirty;mutate('settingsSave',{checklistTemplate:tpl}).then(ok=>{if(ok)toast('Starter checklist saved');});}
+function saveLinks(){
+  const links={};let bad=false;
+  document.querySelectorAll('#team-body input[data-city]').forEach(el=>{const v=el.value.trim();if(v){if(!safeUrl(v))bad=true;else links[el.getAttribute('data-city')]=v;}});
+  if(bad){toast('Links must start with https://',true);return;}
+  document.querySelectorAll('#team-body input[data-city]').forEach(el=>{delete el.dataset.dirty;});
+  mutate('settingsSave',{inspLinks:links},()=>{S.settings.inspLinks=links;}).then(ok=>{if(ok)toast('Links saved');});
+}
 
-function renderDocSlots(){
-  const job=getJob(currentJobId);if(!job)return;
-  if(!job.docs)job.docs={};
-  document.getElementById('doc-slots').innerHTML='<div class="doc-slots-grid">'+DOC_KEYS.map((k,i)=>{
-    const hasLink=!!(job.docs[k]);
-    return '<div class="doc-tile'+(hasLink?' has-link':'')+'">'+
-      '<div class="doc-tile-icon">'+DOC_ICONS[i]+'</div>'+
-      '<div class="doc-tile-label">'+DOC_LABELS[i]+'</div>'+
-      '<input class="doc-tile-input" id="doc-'+k+'" placeholder="Paste link..." value="'+(job.docs[k]||'')+'" onchange="saveDocLink(\''+k+'\')">'+
-      '<div class="doc-tile-btns">'+
-        '<button class="doc-tile-btn" onclick="saveDocLink(\''+k+'\')">Save</button>'+
-        (hasLink?'<button class="doc-tile-btn open" onclick="openDoc(\''+k+'\')">↗ Open</button>':'')+
-      '</div></div>';
-  }).join('')+'</div>';
-  document.getElementById('doc-preview-area').innerHTML='';
+// ---------- Reports (owners)
+const R={from:'',to:'',who:'',job:'',view:'who',data:null,loading:false,error:''};
+function weekStart(iso){const p=iso.split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);const dow=(d.getDay()+6)%7;return addDays(iso,-dow);}
+function setRange(k){
+  const t=todayStr();const f=$('rep-from'),e=$('rep-to');if(f)f.value='';if(e)e.value='';
+  if(k==='this'){R.from=weekStart(t);R.to=t;}
+  if(k==='last'){R.from=addDays(weekStart(t),-7);R.to=addDays(weekStart(t),-1);}
+  if(k==='month'){R.from=t.slice(0,8)+'01';R.to=t;}
+  if(k==='30'){R.from=addDays(t,-29);R.to=t;}
+  runReport();
 }
-function saveDocLink(key){
-  const job=getJob(currentJobId);if(!job.docs)job.docs={};
-  job.docs[key]=document.getElementById('doc-'+key).value.trim();
-  save();renderDocSlots();
+async function runReport(){
+  const f=$('rep-from'),t=$('rep-to');
+  if(f&&f.value)R.from=f.value;if(t&&t.value)R.to=t.value;
+  if(R.from>R.to){const x=R.from;R.from=R.to;R.to=x;}
+  R.loading=true;R.error='';renderReports();
+  try{R.data=await api('report',{from:R.from,to:R.to});}catch(e){R.error=e.code==='offline'?'No signal. Reports need a connection.':e.message;}
+  R.loading=false;renderReports();
 }
-function previewDoc(key){
-  const job=getJob(currentJobId);const url=job.docs&&job.docs[key];if(!url)return;
-  let embed=url;const m=url.match(/\/file\/d\/([^/]+)/);if(m)embed=`https://drive.google.com/file/d/${m[1]}/preview`;
-  const label=DOC_LABELS[DOC_KEYS.indexOf(key)];
-  document.getElementById('doc-preview-area').innerHTML=`<div class="doc-preview-frame"><div class="doc-preview-header"><span>${label}</span><button onclick="document.getElementById('doc-preview-area').innerHTML=''">✕ Close</button></div><iframe src="${embed}" width="100%" height="420" style="border:none;display:block" allowfullscreen></iframe></div>`;
+function reportRows(){
+  const d=R.data;if(!d)return {head:[],rows:[],groups:false};
+  const inRange=x=>x>=R.from&&x<=R.to;
+  const whoOk=n=>!R.who||n===R.who;const jobOk=id=>!R.job||id===R.job;
+  if(R.view==='who'||R.view==='house'){
+    let acts=d.activity.filter(a=>a.kind!=='Inspection'&&whoOk(a.userName)&&jobOk(a.jobId));
+    // several photos by one person at one house on one day read as one line
+    const merged=[],seen={};
+    acts.forEach(a=>{if(a.kind==='Photo'){const k=a.userName+'|'+a.date+'|'+a.jobId;if(seen[k]){seen[k].n++;return;}const c=Object.assign({n:1},a);seen[k]=c;merged.push(c);}else merged.push(a);});
+    merged.forEach(a=>{if(a.kind==='Photo')a.detail=a.n+' photo'+(a.n===1?'':'s')+' added';});
+    // counted checklist work by one person on one day reads as one line, like "Toilets set (3)"
+    const counted={};
+    for(let i=merged.length-1;i>=0;i--){const a=merged[i];const m=a.kind==='Checklist'&&/^(.*) \((\d+)\)$/.exec(a.detail);if(!m)continue;const k=a.userName+'|'+a.date+'|'+a.jobId+'|'+m[1]+'|'+tsDate(a.ts);if(counted[k]){counted[k].c+=+m[2];counted[k].row.detail=m[1]+' ('+counted[k].c+')';merged.splice(i,1);}else{merged[i]=Object.assign({},a);counted[k]={row:merged[i],c:+m[2]};}}
+    const lateFlag=a=>{const t=tsDate(a.ts);return t&&t!==a.date?fmtShort(t):'';};
+    if(R.view==='who'){
+      merged.sort((a,b)=>a.userName.localeCompare(b.userName)||(a.date<b.date?-1:a.date>b.date?1:0)||a.address.localeCompare(b.address));
+      return {head:['Employee','Date','House','Type','What','Entered later'],rows:merged.map(a=>[a.userName||'(unknown)',fmtDay(a.date),a.address||'(no house)',a.kind,a.detail,lateFlag(a)]),groups:true};
+    }
+    merged.sort((a,b)=>a.address.localeCompare(b.address)||(a.date<b.date?-1:a.date>b.date?1:0)||a.userName.localeCompare(b.userName));
+    return {head:['House','Date','Employee','Type','What','Entered later'],rows:merged.map(a=>[a.address||'(no house)',fmtDay(a.date),a.userName||'(unknown)',a.kind,a.detail,lateFlag(a)]),groups:true};
+  }
+  if(R.view==='fails'){
+    const rows=[];
+    S.jobs.forEach(j=>{if(!jobOk(j.id))return;(j.inspLog||[]).forEach(e=>{if(e.result!=='fail'||!inRange(e.date))return;
+      const later=(j.inspLog||[]).filter(x=>x.key===e.key&&x.result==='pass'&&x.date>=e.date).sort((a,b)=>a.date<b.date?-1:1)[0];
+      rows.push([j.address,INSP_LABELS[INSP_KEYS.indexOf(e.key)],fmtDay(e.date),e.note||'',later?'Passed '+fmtShort(later.date):'Still open',e.byName||'',e.date]);});});
+    rows.sort((a,b)=>a[6]<b[6]?1:-1);
+    return {head:['House','Inspection','Failed on','Why it failed','Since then','Entered by'],rows:rows.map(r=>r.slice(0,6)),groups:false};
+  }
+  // assigned versus completed
+  const rows=[];const today=todayStr();
+  d.tasks.forEach(t=>{const n=userName(t.assigneeId)||'(unknown)';if(!whoOk(n)||(R.job&&t.jobId!==R.job))return;const j=t.jobId?getJob(t.jobId):null;
+    rows.push([n,fmtDay(t.date),j?j.address:'',t.text,'To do',t.done?'Done '+fmtShort(t.doneDate):(t.date<today?'PAST DUE':'Open'),t.date]);});
+  S.jobs.forEach(j=>{if(!jobOk(j.id))return;(j.checklist||[]).forEach(it=>{if(!it.assignee||!it.due||!inRange(it.due))return;const n=userName(it.assignee)||'(unknown)';if(!whoOk(n))return;
+    const done=itemDone(it)>=(Number(it.qty)||1);const last=(it.entries||[]).slice(-1)[0];
+    rows.push([n,fmtDay(it.due),j.address,it.text,'House checklist',done?'Done '+fmtShort(last?last.date:'')+(last&&last.byName&&last.byName!==n?' by '+last.byName:''):(it.due<today?'PAST DUE':'Open'),it.due]);});});
+  rows.sort((a,b)=>a[0].localeCompare(b[0])||(a[6]<b[6]?-1:a[6]>b[6]?1:0));
+  return {head:['Employee','Day','House','Assigned','Type','Status'],rows:rows.map(r=>r.slice(0,6)),groups:true};
 }
-function openDoc(key){const job=getJob(currentJobId);const url=job.docs&&job.docs[key];if(url)window.open(url,'_blank');}
+function renderReports(){
+  if(!isOwner()){$('reports-body').innerHTML='';return;}
+  if(!R.from){const t=todayStr();R.from=weekStart(t);R.to=t;}
+  const views=[['who','Who worked on what'],['house','By house'],['fails','Failed inspections'],['assigned','Assigned vs completed']];
+  let h='<div class="section-title">Reports</div><div class="no-print"><div class="toolbar" style="justify-content:flex-start"><div class="seg">'+[['this','This week'],['last','Last week'],['month','This month'],['30','Last 30 days']].map(p=>'<button onclick="setRange(\''+p[0]+'\')">'+p[1]+'</button>').join('')+'</div>'+
+    '<input type="date" class="search-input" style="max-width:160px;flex:none" id="rep-from" value="'+R.from+'" onchange="R.from=this.value"><span class="muted">to</span><input type="date" class="search-input" style="max-width:160px;flex:none" id="rep-to" value="'+R.to+'" onchange="R.to=this.value"><button class="btn btn-primary" onclick="runReport()">Run report</button></div>'+
+    '<div class="toolbar" style="justify-content:flex-start"><select class="search-input" style="max-width:190px;flex:none" onchange="R.who=this.value;renderReports()"><option value="">Everyone</option>'+S.users.map(u=>'<option'+(R.who===u.name?' selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select>'+
+    '<select class="search-input" style="max-width:260px;flex:none" onchange="R.job=this.value;renderReports()"><option value="">All houses</option>'+S.jobs.slice().sort(houseSort).map(j=>'<option value="'+j.id+'"'+(R.job===j.id?' selected':'')+'>'+esc(j.address)+'</option>').join('')+'</select>'+
+    '<div class="seg">'+views.map(v=>'<button class="'+(R.view===v[0]?'on':'')+'" onclick="R.view=\''+v[0]+'\';renderReports()">'+v[1]+'</button>').join('')+'</div></div></div>';
+  if(R.loading)h+='<div class="empty-state">Loading report...</div>';
+  else if(R.error)h+='<div class="empty-state">'+esc(R.error)+'</div>';
+  else if(!R.data)h+='<div class="empty-state">Pick the dates and tap Run report.<br><span class="muted">Only owners can see reports.</span></div>';
+  else{
+    const t=reportRows();const title=views.find(v=>v[0]===R.view)[1];
+    h+='<div class="toolbar"><div><b>'+esc(title)+'</b> <span class="muted">'+esc(fmtDate(R.data.from))+' to '+esc(fmtDate(R.data.to))+(R.who?' · '+esc(R.who):'')+' · '+t.rows.length+' line'+(t.rows.length===1?'':'s')+'</span></div><div class="no-print" style="display:flex;gap:6px"><button class="btn btn-outline" onclick="exportReport()">⬇ Export for Excel</button><button class="btn btn-outline" onclick="window.print()">🖨 Print</button></div></div>';
+    if(!t.rows.length)h+='<div class="empty-state">Nothing recorded for these dates.</div>';
+    else{
+      h+='<div class="master-table-wrap"><table class="rep-table"><thead><tr>'+t.head.slice(t.groups?1:0).map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>';
+      let last=null;
+      t.rows.forEach(r=>{
+        if(t.groups&&r[0]!==last){last=r[0];const n=t.rows.filter(x=>x[0]===last).length;h+='<tr class="rep-group"><td colspan="'+(t.head.length-1)+'">'+esc(last)+' <span class="muted" style="font-weight:400">'+n+' line'+(n===1?'':'s')+'</span></td></tr>';}
+        h+='<tr>'+r.slice(t.groups?1:0).map(c=>'<td'+(/PAST DUE|Still open/.test(c)?' style="color:var(--red);font-weight:600"':'')+'>'+esc(c)+'</td>').join('')+'</tr>';
+      });
+      h+='</tbody></table></div>';
+    }
+  }
+  $('reports-body').innerHTML=h;
+}
+function exportReport(){
+  const t=reportRows();if(!t.rows.length){toast('Nothing to export.',true);return;}
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const csv='﻿'+[t.head].concat(t.rows).map(r=>r.map(q).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='crown-elite-'+R.view+'-'+R.from+'-to-'+R.to+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
 
-// Legacy support — keep old blueprint field working
-function loadBlueprint(){const url=document.getElementById('blueprint-url')&&document.getElementById('blueprint-url').value.trim();if(!url)return;const job=getJob(currentJobId);job.blueprint=url;save();}
-function openBlueprint(){const url=document.getElementById('blueprint-url')&&document.getElementById('blueprint-url').value.trim();if(url)window.open(url,'_blank');}
-function showBlueprintFrame(url){}
-function renderFixtures(){const job=getJob(currentJobId);const list=document.getElementById('detail-fixtures');if(!job.fixtures||!job.fixtures.length){list.innerHTML=`<div style="font-size:13px;color:var(--ink-faint);padding:5px 0">No fixtures added yet</div>`;return;}list.innerHTML=job.fixtures.map((f,i)=>`<div class="fixture-row"><div class="fixture-dot"></div><span class="fixture-name">${f.name}</span><span class="fixture-phase">${f.phase}</span><button class="fixture-del" onclick="deleteFixture(${i})">✕</button></div>`).join('');}
-function addFixture(){const name=document.getElementById('fixture-name-input').value.trim();if(!name)return;const job=getJob(currentJobId);if(!job.fixtures)job.fixtures=[];job.fixtures.push({name,phase:document.getElementById('fixture-phase-input').value});document.getElementById('fixture-name-input').value='';save();renderFixtures();}
-function deleteFixture(idx){const job=getJob(currentJobId);job.fixtures.splice(idx,1);save();renderFixtures();}
-function renderLog(){const job=getJob(currentJobId);const list=document.getElementById('detail-log');const empty=document.getElementById('log-empty');if(!job.log||!job.log.length){list.innerHTML='';empty.style.display='block';return;}empty.style.display='none';list.innerHTML=[...job.log].reverse().map(l=>`<div class="log-entry"><div class="log-avatar">${getInitials(l.worker)}</div><div class="log-info"><div class="log-worker">${l.worker}</div><div class="log-detail">Phase: ${l.phase}</div>${l.notes?`<div class="log-notes">${l.notes}</div>`:''}</div><div class="log-date">${fmtDate(l.date)}</div></div>`).join('');}
-function openLogModal(){document.getElementById('log-date').value=new Date().toISOString().split('T')[0];document.getElementById('add-log-modal').classList.add('open');}
-function closeLogModal(){document.getElementById('add-log-modal').classList.remove('open');document.getElementById('log-worker').value='';document.getElementById('log-notes').value='';}
-function saveLog(){const worker=document.getElementById('log-worker').value.trim();const date=document.getElementById('log-date').value;if(!worker||!date){alert('Please enter worker name and date');return;}const job=getJob(currentJobId);if(!job.log)job.log=[];job.log.push({worker,date,phase:document.getElementById('log-phase').value,notes:document.getElementById('log-notes').value.trim()});save();closeLogModal();renderLog();renderJobs();}
-function openNewJobModal(){document.getElementById('new-job-modal').classList.add('open');}
-function closeNewJobModal(){document.getElementById('new-job-modal').classList.remove('open');['nj-address','nj-lot','nj-subdivision','nj-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('nj-status').value='active';document.getElementById('job-modal-title').textContent='Add New Job';document.getElementById('job-modal-save-btn').textContent='Create Job';document.getElementById('job-modal-save-btn').onclick=saveNewJob;}
-function saveNewJob(){const address=document.getElementById('nj-address').value.trim();if(!address){alert('Please enter an address');return;}const home=homes.find(h=>h.address.toLowerCase()===address.toLowerCase());const job={id:genId(),address,lot:document.getElementById('nj-lot').value.trim(),subdivision:document.getElementById('nj-subdivision').value.trim(),status:document.getElementById('nj-status').value,notes:document.getElementById('nj-notes').value.trim(),phases:initPhases(),log:[],fixtures:[],blueprint:'',permit:home?home.permit:'',city:home?home.city:'',inspections:home?{...home.inspections}:{}};jobs.unshift(job);save();closeNewJobModal();renderJobs();updateStats();}
-function openEditModal(){const job=getJob(currentJobId);document.getElementById('nj-address').value=job.address;document.getElementById('nj-lot').value=job.lot||'';document.getElementById('nj-subdivision').value=job.subdivision||'';document.getElementById('nj-status').value=job.status;document.getElementById('nj-notes').value=job.notes||'';document.getElementById('job-modal-title').textContent='Edit Job';document.getElementById('job-modal-save-btn').textContent='Save Changes';document.getElementById('job-modal-save-btn').onclick=saveEditJob;document.getElementById('new-job-modal').classList.add('open');}
-function saveEditJob(){const job=getJob(currentJobId);job.address=document.getElementById('nj-address').value.trim()||job.address;job.lot=document.getElementById('nj-lot').value.trim();job.subdivision=document.getElementById('nj-subdivision').value.trim();job.status=document.getElementById('nj-status').value;job.notes=document.getElementById('nj-notes').value.trim();save();closeNewJobModal();renderDetail();renderJobs();}
-['new-job-modal','add-log-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this){id==='new-job-modal'?closeNewJobModal():closeLogModal();}});});
-loadFromSheet();
+// ---------- start up
+$('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+window.addEventListener('online',()=>{if(queue.length)flush();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.token&&Date.now()-lastSync>60000)sync();});
+setInterval(()=>{if(queue.length&&!flushing)flush();},30000);
+(function boot(){
+  S.token=lsGet('pjt2_token')||'';
+  try{S.me=JSON.parse(lsGet('pjt2_me')||'null');}catch(e){S.me=null;}
+  try{queue=JSON.parse(lsGet('pjt2_queue')||'[]')||[];}catch(e){queue=[];}
+  if(S.token&&S.me){
+    try{const c=JSON.parse(lsGet('pjt2_cache')||'null');if(c){S.jobs=c.jobs||[];S.tasks=c.tasks||[];S.settings=c.settings||S.settings;S.users=c.users||[];S.team=c.team||[];S.photoCounts=c.photoCounts||{};}}catch(e){}
+    render();sync();
+  }else showLogin();
+})();
 </script>
 </body>
 </html>

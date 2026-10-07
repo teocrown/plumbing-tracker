@@ -1,0 +1,10 @@
+{
+  "name": "Crown Elite Job Tracker",
+  "short_name": "Job Tracker",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1C1A17",
+  "theme_color": "#1C1A17",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}
