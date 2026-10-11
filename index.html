@@ -212,6 +212,40 @@
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:white;padding:11px 16px;border-radius:10px;font-size:14px;z-index:600;opacity:0;transition:all .25s;max-width:92vw;text-align:center;pointer-events:none;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.bad{background:var(--red);}
+  .grp-gap td{padding:0!important;height:14px;background:var(--cream);border-bottom:none!important;cursor:default;}
+  .master-table tbody tr.grp-gap:hover td{background:var(--cream);}
+  .grp-head td{background:var(--copper-pale)!important;font-weight:700;font-size:12px;color:#8A4A12;padding:7px 10px!important;cursor:default;}
+  .grp-block{margin-bottom:18px;}
+  .grp-name{font-weight:700;font-size:13px;color:#8A4A12;margin:0 2px 6px;}
+  .insp-cards{display:none;}
+  .icard{background:white;border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;box-shadow:var(--shadow);}
+  .icard.has-fail{border-color:var(--red);}
+  .icard-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .icard-addr{font-weight:600;font-size:15px;line-height:1.25;}
+  .icard-dots{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px;text-align:center;}
+  .icard-dots .lab{font-size:9px;text-transform:uppercase;color:var(--ink-light);letter-spacing:.2px;margin-bottom:3px;display:block;white-space:nowrap;}
+  .insp-dot.ready{background:var(--amber-light);color:#8A5412;border:1px solid #E8C88A;}
+  .insp-dot.set{background:var(--blue-light);color:var(--blue);border:1px solid #BCD0E8;}
+  .q-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .q-row:last-child{border-bottom:none;}
+  .q-main{flex:1;min-width:170px;}
+  .q-title{font-size:15px;font-weight:600;line-height:1.3;}
+  .q-sub{font-size:12px;color:var(--ink-light);margin-top:2px;}
+  .q-btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .q-btns .btn{padding:10px 13px;}
+  .q-day{font-size:12px;font-weight:700;color:var(--ink-light);padding:12px 2px 2px;text-transform:uppercase;letter-spacing:.5px;}
+  .q-day.late{color:var(--red);}
+  .contact-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .contact-row:last-child{border-bottom:none;}
+  .contact-main{flex:1;min-width:160px;}
+  .contact-name{font-size:16px;font-weight:600;line-height:1.3;}
+  .contact-phone{font-size:16px;font-weight:600;color:var(--ink);text-decoration:none;font-variant-numeric:tabular-nums;}
+  .contact-btns{display:flex;gap:6px;align-items:center;}
+  .contact-btns .btn{padding:11px 14px;font-size:14px;}
+  .btn-ready{background:var(--ink);color:white;font-weight:600;}
+  .order-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border);}
+  .order-row:last-child{border-bottom:none;}
+  @media(max-width:700px){#page-inspections .master-table-wrap{display:none;}.insp-cards{display:block;}.action-row .btn-ready{flex-basis:100%;padding:14px 10px;font-size:15px;}}
   @media(max-width:600px){.form-row{flex-direction:column;gap:0;}.jobs-grid{grid-template-columns:1fr;}.header-sub{display:none;}.hide-sm{display:none;}}
   @media print{.header,.tab-bar,.banner,.no-print,.toast{display:none!important;}body{background:white;}.main{padding:0;}.page{display:none!important;}#page-reports{display:block!important;}}
 </style>
@@ -237,24 +271,28 @@
 <div class="page" id="page-mylist"><div class="main"><div class="container" id="mylist-body"></div></div></div>
 
 <div class="page" id="page-inspections"><div class="main"><div class="container">
+  <div id="insp-queue"></div>
   <div class="toolbar">
     <input class="search-input" id="insp-search" placeholder="Search address, city, project #..." oninput="inspSearch=this.value;renderInspections()">
     <div class="seg" id="insp-filter"><button class="on" onclick="setInspFilter('all')">All</button><button onclick="setInspFilter('failed')">Failed</button></div>
+    <button class="btn btn-outline btn-sm grp-toggle" onclick="toggleGroups()"></button>
     <span id="insp-count" class="muted"></span>
   </div>
   <div class="master-table-wrap"><table class="master-table">
     <thead><tr><th>Address</th><th>Project #</th><th class="insp-cell">Ground</th><th class="insp-cell">Sewer</th><th class="insp-cell">Gas</th><th class="insp-cell">Rough In</th><th class="insp-cell">Shower Pan</th><th class="insp-cell">Temp Gas</th><th class="insp-cell">Final</th><th>Checklist</th></tr></thead>
     <tbody id="insp-tbody"></tbody>
   </table></div>
+  <div class="insp-cards" id="insp-cards"></div>
 </div></div></div>
 
 <div class="page" id="page-jobs"><div class="main"><div class="container">
   <div class="toolbar">
     <input class="search-input" id="job-search" placeholder="Search houses..." oninput="jobSearch=this.value;renderJobs()">
     <div class="seg" id="job-filter"><button class="on" onclick="setJobFilter('all')">All</button><button onclick="setJobFilter('active')">Active</button><button onclick="setJobFilter('pending')">Pending</button><button onclick="setJobFilter('warranty')">Warranty</button></div>
+    <button class="btn btn-outline btn-sm grp-toggle" onclick="toggleGroups()"></button>
     <button class="btn btn-primary owner-only" onclick="openJobModal()">+ New House</button>
   </div>
-  <div class="jobs-grid" id="jobs-grid"></div>
+  <div id="jobs-grid"></div>
   <div id="jobs-empty" class="empty-state" style="display:none">No houses found</div>
 </div></div></div>
 
@@ -265,6 +303,15 @@
   </div>
   <div class="jobs-grid" id="completed-grid"></div>
   <div id="completed-empty" class="empty-state" style="display:none">No completed houses yet</div>
+</div></div></div>
+
+<div class="page" id="page-phonebook"><div class="main"><div class="container">
+  <div class="toolbar">
+    <input class="search-input" id="pb-search" type="search" placeholder="Search name, builder, neighborhood..." oninput="pbSearch=this.value;renderPhoneBook()">
+    <span id="pb-count" class="muted"></span>
+    <button class="btn btn-primary owner-only" onclick="openContactModal()">+ Add contact</button>
+  </div>
+  <div id="pb-list"></div>
 </div></div></div>
 
 <div class="page" id="page-team"><div class="main"><div class="container" id="team-body"></div></div></div>
@@ -288,7 +335,7 @@
 
 <script>
 const SCRIPT_URL = window.JT_TEST_URL || 'https://script.google.com/macros/s/AKfycbyb5KC0EeXO253R5tjU0-zyzdBl3A8TUXN0YMSLD-E7J5qxDZHAtVj-_URy6-yepAk/exec';
-const API_V = 2;
+const API_V = 3;
 const PHASES = ['Ground','Rough-in','Top out','Trim','Final inspection','Service/Warranty'];
 const INSP_KEYS = ['ground','sewer','gas','roughIn','showPan','tempGas','final'];
 const INSP_LABELS = ['Ground','Sewer','Gas','Rough In','Shower Pan','Temp Gas','Final'];
@@ -297,9 +344,9 @@ const DOC_LABELS = ['Foundation','Blueprints','Materials','Other'];
 const DOC_ICONS = ['🏗️','📐','📦','📎'];
 const STATUS_LABELS = {active:'Active',complete:'Complete',pending:'Pending',warranty:'Warranty'};
 
-const S = {token:'',me:null,jobs:[],tasks:[],settings:{inspLinks:{},checklistTemplate:[]},users:[],team:[],photoCounts:{},setupOpen:false};
+const S = {token:'',me:null,jobs:[],tasks:[],contacts:[],settings:{inspLinks:{},checklistTemplate:[],groupOrder:[]},users:[],team:[],photoCounts:{},setupOpen:false};
 let queue=[],flushing=false,currentJobId=null,workDate='',tab='',lastSync=0,renderPending=false;
-let jobFilter='all',jobSearch='',inspSearch='',inspFilter='all',completedSearch='',teamDate='';
+let jobFilter='all',jobSearch='',inspSearch='',inspFilter='all',completedSearch='',teamDate='',pbSearch='';
 const photoCache={},uploads=[];
 let modalFns=[],modalOnClose=null;
 
@@ -325,6 +372,9 @@ function safeUrl(u){return /^https?:\/\//i.test(String(u||''))?String(u):'';}
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+function fmtTime(t){const m=/^(\d\d):(\d\d)$/.exec(String(t||''));if(!m)return '';const h=+m[1];return ((h+11)%12+1)+':'+m[2]+(h<12?' AM':' PM');}
+function whenText(date,time){return [date?fmtShort(date):'',fmtTime(time)].filter(Boolean).join(', ');}
+function byTime(a,b){const x=a.time||'99:99',y=b.time||'99:99';return x<y?-1:x>y?1:0;}
 let toastTimer=null;
 function toast(msg,bad){const t=$('toast');t.textContent=msg;t.className='toast show'+(bad?' bad':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.className='toast';},bad?4500:2200);}
 function setSyncStatus(s,m){const el=$('sync-status');el.textContent=m;el.className='sync-status '+s;if(s==='saved')setTimeout(()=>{if(el.textContent===m){el.className='sync-status';el.textContent='';}},2200);}
@@ -342,13 +392,15 @@ async function api(action,payload,timeoutMs){
   return d;
 }
 function applyResponse(d){
+  if(d.jobs)S.jobs=d.jobs;
+  if(d.contacts)S.contacts=d.contacts;
   if(d.job){const i=S.jobs.findIndex(j=>j.id===d.job.id);if(i>=0)S.jobs[i]=d.job;else S.jobs.unshift(d.job);}
   if(d.task){const i=S.tasks.findIndex(t=>t.id===d.task.id);if(i>=0)S.tasks[i]=d.task;else S.tasks.push(d.task);}
   if(d.users)S.users=d.users;
   if(d.settings)S.settings=d.settings;
   if(d.setupOpen!=null)S.setupOpen=d.setupOpen;
 }
-function saveCache(){lsSet('pjt2_cache',JSON.stringify({jobs:S.jobs,tasks:S.tasks,settings:S.settings,users:S.users,team:S.team,photoCounts:S.photoCounts}));}
+function saveCache(){lsSet('pjt2_cache',JSON.stringify({jobs:S.jobs,tasks:S.tasks,contacts:S.contacts,settings:S.settings,users:S.users,team:S.team,photoCounts:S.photoCounts}));}
 function saveQueue(){lsSet('pjt2_queue',JSON.stringify(queue));updateQueueBanner();}
 function updateQueueBanner(){
   const b=$('queue-banner');
@@ -396,7 +448,7 @@ async function sync(manual){
   setSyncStatus('saving','Loading...');
   try{
     const d=await api('load');
-    S.me=d.me;S.jobs=d.jobs;S.tasks=d.tasks;S.settings=d.settings;S.users=d.users||[];S.team=d.team||[];S.photoCounts=d.photoCounts||{};S.setupOpen=!!d.setupOpen;
+    S.me=d.me;S.jobs=d.jobs;S.tasks=d.tasks;S.contacts=d.contacts||[];S.settings=d.settings;S.users=d.users||[];S.team=d.team||[];S.photoCounts=d.photoCounts||{};S.setupOpen=!!d.setupOpen;
     lsSet('pjt2_me',JSON.stringify(S.me));saveCache();lastSync=Date.now();
     setSyncStatus('saved','✓ Up to date');
     safeRender();
@@ -453,7 +505,7 @@ async function doSetup(id){
 }
 function loggedIn(d){
   S.token=d.token;S.me=d.me;queue=queue.filter(o=>o.u===d.me.id);saveQueue();lsSet('pjt2_token',S.token);lsSet('pjt2_me',JSON.stringify(S.me));
-  $('login').classList.remove('open');tab='';S.jobs=[];S.tasks=[];render();sync(true);
+  $('login').classList.remove('open');tab='';S.jobs=[];S.tasks=[];S.contacts=[];render();sync(true);
 }
 function openMeMenu(){
   openModal({title:S.me?S.me.name:'',body:'<p style="font-size:14px;color:var(--ink-light)">Logged in as <b>'+esc(S.me.name)+'</b> on this device.</p>'+(isOwner()?'<p class="form-hint" style="margin-top:8px">To change your own PIN, go to Team & To Dos.</p>':''),
@@ -478,10 +530,11 @@ document.addEventListener('focusout',()=>{if(renderPending)setTimeout(()=>{if(re
 function tabsFor(){
   const mine=myListItems().filter(x=>!x.done&&x.date&&x.date<=todayStr()).length;
   const fails=S.jobs.filter(j=>j.status!=='complete'&&openFails(j).length).length;
-  const failBadge=fails?'<span class="tab-count red">'+fails+'</span>':'';
+  const toSet=isOwner()?allReqs().filter(x=>!x.r.setDate).length:0;
+  const failBadge=(toSet?'<span class="tab-count">'+toSet+'</span>':'')+(fails?'<span class="tab-count red">'+fails+'</span>':'');
   const myBadge=mine?'<span class="tab-count">'+mine+'</span>':'';
-  if(isOwner())return [['inspections','📋 Inspections'+failBadge],['jobs','🏠 Houses'],['team','👷 Team & To Dos'],['reports','📊 Reports'],['completed','✅ Completed'],['mylist','📝 My List'+myBadge]];
-  return [['mylist','📝 My List'+myBadge],['jobs','🏠 Houses'],['inspections','📋 Inspections'+failBadge],['completed','✅ Completed']];
+  if(isOwner())return [['inspections','📋 Inspections'+failBadge],['jobs','🏠 Houses'],['team','👷 Team & To Dos'],['phonebook','📞 Phone Book'],['reports','📊 Reports'],['completed','✅ Completed'],['mylist','📝 My List'+myBadge]];
+  return [['mylist','📝 My List'+myBadge],['jobs','🏠 Houses'],['inspections','📋 Inspections'+failBadge],['phonebook','📞 Phone Book'],['completed','✅ Completed']];
 }
 function switchTab(t){tab=t;workDate='';render();window.scrollTo(0,0);}
 function render(){
@@ -504,6 +557,8 @@ function renderPages(){
   if(tab==='inspections')renderInspections();
   if(tab==='jobs')renderJobs();
   if(tab==='completed')renderCompleted();
+  if(tab==='phonebook')renderPhoneBook();
+  document.querySelectorAll('.grp-toggle').forEach(el=>{el.textContent=showGroups?'Hide builder names':'Show builder names';});
   if(tab==='team')renderTeam();
   if(tab==='reports')renderReports();
   if(currentJobId)renderDetail();
@@ -516,6 +571,45 @@ function checklistProgress(job){const c=job.checklist||[];let total=0,done=0;c.f
 function latestInsp(job,key){let best=null,bi=-1;(job.inspLog||[]).forEach((e,i)=>{if(e.key!==key)return;if(!best||e.date>best.date||(e.date===best.date&&i>bi)){best=e;bi=i;}});return best;}
 function openFails(job){return INSP_KEYS.map((k,i)=>{const l=latestInsp(job,k);return l&&l.result==='fail'?{key:k,label:INSP_LABELS[i],entry:l}:null;}).filter(Boolean);}
 function cityKey(c){return String(c||'').toUpperCase().replace(/\s+/g,' ').trim();}
+// Houses are kept in Brenda's order: builder, then neighborhood. The names only show when asked for.
+let showGroups=lsGet('pjt2_groups')==='1';
+function toggleGroups(){showGroups=!showGroups;lsSet('pjt2_groups',showGroups?'1':'');render();}
+function gKey(b,n){return cityKey(b)+'|'+cityKey(n);}
+function jobGroup(j){return gKey(j.builder,j.subdivision);}
+function groupLabel(j){return [j.builder,j.subdivision].filter(Boolean).join(' · ')||'No builder yet';}
+function listSort(list){
+  const m={};(S.settings.groupOrder||[]).forEach((k,i)=>{m[k]=i;});
+  const rk=j=>{const k=jobGroup(j);return k==='|'?2e6:(k in m?m[k]:1e6);};
+  return list.slice().sort((a,b)=>{
+    const ra=rk(a),rb=rk(b);if(ra!==rb)return ra-rb;
+    const ka=jobGroup(a),kb=jobGroup(b);if(ka!==kb)return ka<kb?-1:1;
+    const oa=Number(a.ord)||0,ob=Number(b.ord)||0;if(oa&&ob)return oa-ob;if(oa!==ob)return oa?-1:1;
+    return houseSort(a,b);});
+}
+function grouped(list){const out=[];listSort(list).forEach(j=>{const k=jobGroup(j);const g=out[out.length-1];if(g&&g.key===k)g.jobs.push(j);else out.push({key:k,label:groupLabel(j),jobs:[j]});});return out;}
+function knownBuilders(){const s={};S.jobs.forEach(j=>{if(j.builder)s[j.builder.trim()]=1;});(S.contacts||[]).forEach(c=>{if(c.builder)s[c.builder.trim()]=1;});return Object.keys(s).sort();}
+function knownHoods(){const s={};S.jobs.forEach(j=>{if(j.subdivision)s[j.subdivision.trim()]=1;});(S.contacts||[]).forEach(c=>{if(c.neighborhood)s[c.neighborhood.trim()]=1;});return Object.keys(s).sort();}
+function dataList(id,vals){return '<datalist id="'+id+'">'+vals.map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>';}
+// Ready for inspection: asked for, then set for a day, then waiting on the result.
+function reqFor(job,key){return (job.inspReqs||[]).find(r=>r.key===key);}
+function allReqs(){const out=[];S.jobs.forEach(j=>{if(j.status==='complete')return;(j.inspReqs||[]).forEach(r=>out.push({job:j,r}));});return out;}
+function inspLabel(k){return INSP_LABELS[INSP_KEYS.indexOf(k)]||k;}
+// The builder contact for a house: the one picked for it, or the Phone Book contacts for its builder and neighborhood.
+function contactsFor(job){
+  const all=S.contacts||[];
+  if(job.contactId){const c=all.find(x=>x.id===job.contactId);if(c)return [c];}
+  const b=cityKey(job.builder),n=cityKey(job.subdivision);if(!b&&!n)return [];
+  let m=all.filter(c=>cityKey(c.builder)===b&&cityKey(c.neighborhood)===n);
+  if(!m.length&&b&&n)m=all.filter(c=>cityKey(c.builder)===b&&!cityKey(c.neighborhood));
+  return m;
+}
+function telOf(p){const d=String(p||'').replace(/[^\d+]/g,'');return d.replace(/\+/g,'').length>=7?d:'';}
+function contactRow(c,edit){
+  const tel=telOf(c.phone);
+  return '<div class="contact-row"><div class="contact-main"><div class="contact-name">'+esc(c.name)+'</div><div class="q-sub">'+esc([c.builder,c.neighborhood].filter(Boolean).join(' · '))+(c.notes?'<div>'+esc(c.notes)+'</div>':'')+'</div>'+
+    (c.phone?(tel?'<a class="contact-phone" href="tel:'+esc(tel)+'">'+esc(c.phone)+'</a>':'<span class="contact-phone">'+esc(c.phone)+'</span>'):'<span class="muted">No phone number yet</span>')+'</div>'+
+    '<div class="contact-btns">'+(tel?'<a class="btn btn-primary" href="tel:'+esc(tel)+'">📞 Call</a><a class="btn btn-outline" href="sms:'+esc(tel)+'">💬 Text</a>':'')+(edit&&isOwner()?'<button class="icon-btn" title="Edit contact" aria-label="Edit contact" onclick="openContactModal(\''+c.id+'\')">✎</button>':'')+'</div></div>';
+}
 function inspUrlFor(job){return safeUrl(job.inspUrl)||safeUrl((S.settings.inspLinks||{})[cityKey(job.city)])||'';}
 function cityFull(c){return String(c||'').replace(/^HOU\b/i,'Houston').replace(/^MONT\b/i,'Montgomery');}
 function mapsUrl(job){
@@ -549,8 +643,8 @@ function checklistRow(job,it,showHouse){
   }
   if(isOwner()&&!showHouse)side+='<button class="icon-btn" title="Edit" onclick="openItemModal(\''+job.id+'\',\''+it.id+'\')">✎</button>';
   let chips='';
-  if(it.assignee){const n=it.assignee===S.me.id?'You':userName(it.assignee);chips+='<span class="chip chip-blue">'+esc(n||'Assigned')+(it.due?' · due '+esc(fmtShort(it.due)):'')+'</span>';}
-  else if(it.due)chips+='<span class="chip chip-grey">due '+esc(fmtShort(it.due))+'</span>';
+  if(it.assignee){const n=it.assignee===S.me.id?'You':userName(it.assignee);chips+='<span class="chip chip-blue">'+esc(n||'Assigned')+(it.due?' · due '+esc(whenText(it.due,it.time)):it.time?' · '+esc(fmtTime(it.time)):'')+'</span>';}
+  else if(it.due||it.time)chips+='<span class="chip chip-grey">'+(it.due?'due ':'')+esc(whenText(it.due,it.time))+'</span>';
   if(it.due&&!done&&it.due<todayStr())chips+='<span class="chip chip-red">past due</span>';
   const house=showHouse?'<span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span>':'';
   return '<div class="cl-row'+(done?' done':'')+'">'+box+'<div class="cl-main"><div class="cl-text">'+esc(it.text)+'</div><div class="cl-sub">'+house+chips+(who?'<span>'+who+'</span>':'')+'</div></div><div class="cl-side">'+side+'</div></div>';
@@ -572,15 +666,17 @@ function uncheckItem(jobId,itemId){
 function myListItems(){
   if(!S.me)return [];
   const out=[];
-  S.tasks.filter(t=>t.assigneeId===S.me.id).forEach(t=>out.push({type:'task',id:t.id,date:t.date,done:t.done,doneDate:t.doneDate,text:t.text,job:t.jobId?getJob(t.jobId):null,task:t}));
-  S.jobs.filter(j=>j.status!=='complete').forEach(j=>(j.checklist||[]).forEach(it=>{if(it.assignee===S.me.id){const done=itemDone(it)>=(Number(it.qty)||1);const last=(it.entries||[]).slice(-1)[0];out.push({type:'item',id:it.id,date:it.due||'',done,doneDate:last?last.date:'',text:it.text,job:j,item:it});}}));
-  return out;
+  S.tasks.filter(t=>t.assigneeId===S.me.id).forEach(t=>out.push({type:'task',id:t.id,date:t.date,time:t.time,done:t.done,doneDate:t.doneDate,text:t.text,job:t.jobId?getJob(t.jobId):null,task:t}));
+  S.jobs.forEach(j=>(j.tickets||[]).forEach(t=>{if(t.assignee===S.me.id&&(j.status!=='complete'||!t.done))out.push({type:'ticket',id:t.id,date:t.date||'',time:t.time,done:!!t.done,doneDate:t.doneDate,text:t.text,job:j,ticket:t});}));
+  S.jobs.filter(j=>j.status!=='complete').forEach(j=>(j.checklist||[]).forEach(it=>{if(it.assignee===S.me.id){const done=itemDone(it)>=(Number(it.qty)||1);const last=(it.entries||[]).slice(-1)[0];out.push({type:'item',id:it.id,date:it.due||'',time:it.time,done,doneDate:last?last.date:'',text:it.text,job:j,item:it});}}));
+  return out.sort(byTime);
 }
 function taskRow(t,ownerView){
   const job=t.jobId?getJob(t.jobId):null;
   const late=!t.done&&t.date<todayStr();
   return '<div class="cl-row'+(t.done?' done':'')+'"><div class="cl-box'+(t.done?' on':'')+'" role="checkbox" aria-checked="'+!!t.done+'" onclick="toggleTask(\''+t.id+'\')">'+(t.done?'✓':'')+'</div><div class="cl-main"><div class="cl-text">'+esc(t.text)+'</div><div class="cl-sub">'+
     (job?'<span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span>':'')+
+    (t.time?'<span class="chip chip-grey">🕘 '+esc(fmtTime(t.time))+'</span>':'')+
     (late?'<span class="chip chip-red">from '+esc(fmtShort(t.date))+'</span>':'')+
     (t.done?'<span>Done '+esc(fmtShort(t.doneDate))+(ownerView&&t.doneTs&&tsDate(t.doneTs)!==t.doneDate?' (entered '+esc(fmtShort(tsDate(t.doneTs)))+')':'')+'</span>':'')+
     '</div></div>'+(ownerView?'<div class="cl-side"><button class="icon-btn" title="Edit" onclick="openTaskModal(\''+t.id+'\')">✎</button></div>':'')+'</div>';
@@ -593,11 +689,11 @@ function toggleTask(id){
 function renderMyList(){
   const today=todayStr(),week=addDays(today,7);
   const items=myListItems();
-  const row=x=>x.type==='task'?taskRow(x.task,false):checklistRow(x.job,x.item,true);
+  const row=x=>x.type==='task'?taskRow(x.task,false):x.type==='ticket'?ticketRow(x.job,x.ticket,true):checklistRow(x.job,x.item,true);
   const sec=(title,list,cls)=>list.length?'<div class="list-card"><div class="list-head '+(cls||'')+'">'+title+'<span>'+list.filter(x=>!x.done).length+' open</span></div>'+list.map(row).join('')+'</div>':'';
   const overdue=items.filter(x=>!x.done&&x.date&&x.date<today);
   const todays=items.filter(x=>x.date===today||(x.done&&x.doneDate===today&&x.date!==today&&x.date));
-  const soon=items.filter(x=>x.date>today&&x.date<=week).sort((a,b)=>a.date<b.date?-1:1);
+  const soon=items.filter(x=>x.date>today&&x.date<=week).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:byTime(a,b));
   const undated=items.filter(x=>!x.date&&!x.done);
   let h='<div class="section-title">'+esc(S.me.name)+'\'s list</div>'+workDateBar();
   h+=sec('Past due',overdue,'red')+sec('Today · '+esc(fmtDay(today)),todays)+sec('Assigned to you',undated);
@@ -614,20 +710,103 @@ function renderMyList(){
 // ---------- Inspections table
 function setSeg(id,idx){[...$(id).children].forEach((b,i)=>b.classList.toggle('on',i===idx));}
 function setInspFilter(f){inspFilter=f;setSeg('insp-filter',f==='all'?0:1);renderInspections();}
+function copyPermit(jobId){const job=getJob(jobId);if(!job||!job.permit)return;copyText(job.permit).then(ok=>{toast(ok?'Project number '+job.permit+' copied. Paste it on the city page.':'Could not copy. Press and hold the number to copy it.',!ok);});}
+function renderQueue(){
+  const own=isOwner(),today=todayStr(),tomorrow=addDays(today,1);
+  const reqs=allReqs();
+  const toSet=reqs.filter(x=>!x.r.setDate).sort((a,b)=>a.r.date<b.r.date?-1:a.r.date>b.r.date?1:0);
+  const pend=reqs.filter(x=>x.r.setDate).sort((a,b)=>a.r.setDate<b.r.setDate?-1:a.r.setDate>b.r.setDate?1:houseSort(a.job,b.job));
+  const addr=x=>'<span class="house-link" onclick="openDetail(\''+x.job.id+'\')">'+esc(x.job.address)+'</span>';
+  let h='';
+  if(own||toSet.length){
+    h+='<div class="list-card"><div class="list-head">🔔 Ready for inspection, to be set<span>'+toSet.length+'</span></div>';
+    h+=toSet.map(x=>'<div class="q-row"><div class="q-main"><div class="q-title">'+addr(x)+' · '+esc(inspLabel(x.r.key))+'</div><div class="q-sub">Asked by '+esc(x.r.byName||'')+', '+esc(fmtDay(x.r.date))+(x.r.note?' · '+esc(x.r.note):'')+'</div></div><div class="q-btns">'+
+      (own?'<button class="btn btn-primary" onclick="openSetModal(\''+x.job.id+'\',\''+x.r.id+'\',\''+x.r.key+'\')">Set date</button><button class="icon-btn" title="Take off the list" aria-label="Take off the list" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">✕</button>'
+        :x.r.by===S.me.id?'<button class="btn btn-outline" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">Cancel</button>':'<span class="chip chip-amber">waiting to be set</span>')+'</div></div>').join('')||'<div class="muted" style="padding:10px 2px">Nothing waiting to be set.</div>';
+    h+='</div>';
+  }
+  if(own||pend.length){
+    h+='<div class="list-card"><div class="list-head">⏳ Set, waiting on results<span>'+pend.length+'</span></div>';
+    let last=null;
+    pend.forEach(x=>{
+      const d=x.r.setDate;
+      if(d!==last){last=d;h+='<div class="q-day'+(d<today?' late':'')+'">'+(d<today?'Result due · set for '+esc(fmtDay(d)):d===today?'Today · '+esc(fmtDay(d)):d===tomorrow?'Tomorrow · '+esc(fmtDay(d)):esc(fmtDay(d)))+'</div>';}
+      const iu=inspUrlFor(x.job);
+      h+='<div class="q-row"><div class="q-main"><div class="q-title">'+addr(x)+' · '+esc(inspLabel(x.r.key))+'</div><div class="q-sub">'+(x.job.permit?'#'+esc(x.job.permit)+' · ':'')+'Asked by '+esc(x.r.byName||'')+(x.r.note?' · '+esc(x.r.note):'')+'</div></div><div class="q-btns">'+
+        (own?(iu?'<a class="btn btn-outline" href="'+esc(iu)+'" target="_blank" rel="noopener" onclick="copyPermit(\''+x.job.id+'\')">City ↗</a>':'')+
+          '<button class="btn btn-green" onclick="openInspModal(\''+x.r.key+'\',\'pass\',\''+x.job.id+'\')">Passed</button><button class="btn btn-red" onclick="openInspModal(\''+x.r.key+'\',\'fail\',\''+x.job.id+'\')">Failed</button><button class="icon-btn" title="Change the date" aria-label="Change the date" onclick="openSetModal(\''+x.job.id+'\',\''+x.r.id+'\',\''+x.r.key+'\')">✎</button>'
+          :'<span class="chip chip-blue">set for '+esc(fmtShort(d))+'</span>')+'</div></div>';
+    });
+    if(!pend.length)h+='<div class="muted" style="padding:10px 2px">No inspections waiting on results.</div>';
+    h+='</div>';
+  }
+  $('insp-queue').innerHTML=h;
+}
+function inspCellParts(h,k){
+  const l=latestInsp(h,k),r=reqFor(h,k);
+  if(r&&r.setDate)return ['<div class="insp-dot set">…</div>','set '+fmtShort(r.setDate)];
+  if(r)return ['<div class="insp-dot ready">!</div>','ready'];
+  if(l&&l.result==='fail')return ['<div class="insp-dot fail">✕</div>',fmtShort(l.date)];
+  if(l)return ['<div class="insp-dot done">✓</div>',fmtShort(l.date)];
+  return ['<div class="insp-dot empty">·</div>',''];
+}
+const INSP_SHORT=['Grnd','Sewer','Gas','Rough','Pan','T Gas','Final'];
+function openSetModal(jobId,reqId,key){
+  const job=getJob(jobId);if(!job)return;
+  const r=(job.inspReqs||[]).find(x=>x.id===reqId)||reqFor(job,key);
+  const def=r&&r.setDate?r.setDate:addDays(todayStr(),1);
+  const buttons=[{label:'Cancel',fn:closeModal}];
+  if(r&&r.setDate)buttons.push({label:'Not set yet',cls:'btn-outline',fn:()=>{closeModal();mutate('jobOp',{jobId,op:'inspSet',args:{reqId:r.id,key,clear:true}},()=>{r.setDate='';});}});
+  buttons.push({label:'Save',cls:'btn-primary',fn:()=>{
+    const date=$('set-date').value;if(!date){toast('Pick the day.',true);return;}
+    const id=r?r.id:genId('q_');
+    closeModal();mutate('jobOp',{jobId,op:'inspSet',args:{reqId:id,key,date}},()=>{if(r)r.setDate=date;else (job.inspReqs=job.inspReqs||[]).push({id,key,by:S.me.id,byName:S.me.name,date:todayStr(),note:'',setDate:date});});
+  }});
+  openModal({title:inspLabel(key)+' inspection: set the date',body:
+    '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
+    '<div class="form-group"><label class="form-label">Day the inspection is set for</label><input class="form-input" id="set-date" type="date" value="'+def+'"></div>'+
+    '<div class="form-hint">It moves to "Set, waiting on results" until you mark it Passed or Failed.</div>',buttons});
+}
+function delReq(jobId,reqId){
+  const job=getJob(jobId);if(!job)return;
+  if(!confirm('Take this off the inspection list?'))return;
+  mutate('jobOp',{jobId,op:'inspReqDel',args:{reqId}},()=>{job.inspReqs=(job.inspReqs||[]).filter(x=>x.id!==reqId);});
+}
+function openReadyModal(){
+  const job=getJob(currentJobId);if(!job)return;
+  const free=INSP_KEYS.filter(k=>!reqFor(job,k));
+  if(!free.length){toast('Every inspection on this house is already on the list.',true);return;}
+  const state=k=>{const l=latestInsp(job,k);return !l?'':l.result==='fail'?' (failed '+fmtShort(l.date)+')':' (passed '+fmtShort(l.date)+')';};
+  const def=free.find(k=>{const l=latestInsp(job,k);return l&&l.result==='fail';})||free.find(k=>!latestInsp(job,k))||free[0];
+  openModal({title:'Ready for inspection',body:
+    '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
+    '<div class="form-group"><label class="form-label">Which inspection</label><select class="form-select" id="rq-key">'+free.map(k=>'<option value="'+k+'"'+(k===def?' selected':'')+'>'+esc(inspLabel(k)+state(k))+'</option>').join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Note for the office (optional)</label><textarea class="form-textarea" id="rq-note" placeholder="Anything they should know before calling it in"></textarea></div>'+
+    '<div class="form-hint">Brenda and Teodoro will see this house on their list of inspections to set.</div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Send',cls:'btn-primary',fn:()=>{
+      const key=$('rq-key').value,note=$('rq-note').value.trim(),id=genId('q_');
+      closeModal();
+      mutate('jobOp',{jobId:job.id,op:'inspReq',args:{reqId:id,key,note}},()=>{(job.inspReqs=job.inspReqs||[]).push({id,key,by:S.me.id,byName:S.me.name,date:todayStr(),note,setDate:''});}).then(ok=>{if(ok)toast(inspLabel(key)+' inspection sent to the office.');});
+    }}]});
+}
 function renderInspections(){
-  const all=S.jobs.filter(j=>j.status!=='complete').sort(houseSort);
+  renderQueue();
+  const all=listSort(S.jobs.filter(j=>j.status!=='complete'));
   let f=all;
   if(inspFilter==='failed')f=f.filter(j=>openFails(j).length);
-  if(inspSearch){const t=inspSearch.toLowerCase();f=f.filter(h=>(h.address||'').toLowerCase().includes(t)||(h.city||'').toLowerCase().includes(t)||(h.permit||'').toLowerCase().includes(t));}
+  if(inspSearch)f=f.filter(h=>matchJob(h,inspSearch));
   $('insp-count').textContent=f.length+' of '+all.length+' houses';
-  $('insp-tbody').innerHTML=f.map(h=>{
-    const dots=INSP_KEYS.map(k=>{const l=latestInsp(h,k);
-      if(l&&l.result==='fail')return '<td class="insp-cell"><div class="insp-dot fail">✕</div><span class="insp-date">'+esc(fmtShort(l.date))+'</span></td>';
-      if(l)return '<td class="insp-cell"><div class="insp-dot done">✓</div><span class="insp-date">'+esc(fmtShort(l.date))+'</span></td>';
-      return '<td class="insp-cell"><div class="insp-dot empty">·</div></td>';}).join('');
+  const groups=grouped(f);
+  const tr=h=>{
+    const dots=INSP_KEYS.map(k=>{const c=inspCellParts(h,k);return '<td class="insp-cell">'+c[0]+(c[1]?'<span class="insp-date">'+esc(c[1])+'</span>':'')+'</td>';}).join('');
     const p=checklistProgress(h);const pct=p.total?Math.round(p.done/p.total*100):0;
     return '<tr onclick="openDetail(\''+h.id+'\')"><td><div class="addr-cell">'+esc(h.address)+'</div><div class="addr-city">'+esc([h.city,h.zip].filter(Boolean).join(' '))+'</div></td><td class="permit-cell">'+esc(h.permit||'')+'</td>'+dots+'<td style="min-width:70px"><div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div><div class="muted" style="font-size:10px;margin-top:2px">'+p.done+' of '+p.total+'</div></td></tr>';
-  }).join('')||'<tr><td colspan="10" class="empty-state">No houses found</td></tr>';
+  };
+  $('insp-tbody').innerHTML=groups.map((g,i)=>(i?'<tr class="grp-gap"><td colspan="10"></td></tr>':'')+(showGroups?'<tr class="grp-head"><td colspan="10">'+esc(g.label)+'</td></tr>':'')+g.jobs.map(tr).join('')).join('')||'<tr><td colspan="10" class="empty-state">No houses found</td></tr>';
+  // phones get one compact card per house instead of the wide table
+  const card=h=>'<div class="icard'+(openFails(h).length?' has-fail':'')+'" onclick="openDetail(\''+h.id+'\')"><div class="icard-top"><div class="icard-addr">'+esc(h.address)+'</div><div class="permit-cell">'+esc(h.permit||'')+'</div></div><div class="addr-city">'+esc([cityFull(h.city),h.zip].filter(Boolean).join(' '))+'</div><div class="icard-dots">'+
+    INSP_KEYS.map((k,i)=>{const c=inspCellParts(h,k);return '<div><span class="lab">'+INSP_SHORT[i]+'</span>'+c[0]+'<span class="insp-date">'+esc(c[1]||'')+'</span></div>';}).join('')+'</div></div>';
+  $('insp-cards').innerHTML=groups.map(g=>'<div class="grp-block">'+(showGroups?'<div class="grp-name">'+esc(g.label)+'</div>':'')+g.jobs.map(card).join('')+'</div>').join('')||'<div class="empty-state">No houses found</div>';
 }
 
 // ---------- House cards
@@ -639,6 +818,8 @@ function jobCard(job){
   const last=lastWorkDate(job);const pc=S.photoCounts[job.id]||0;
   return '<div class="job-card'+(fails.length?' has-fail':'')+'" onclick="openDetail(\''+job.id+'\')"><div class="job-card-header"><div><div class="job-address">'+esc(job.address)+'</div><div class="job-lot">'+esc([cityFull(job.city),job.zip].filter(Boolean).join(' ')||'')+(job.permit?' · #'+esc(job.permit):'')+'</div></div><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span></div>'+
     '<div class="job-card-body">'+fails.map(f=>'<span class="chip chip-red" style="margin:0 4px 6px 0">✕ '+esc(f.label)+' failed</span>').join('')+
+    (job.inspReqs||[]).map(r=>r.setDate?'<span class="chip chip-blue" style="margin:0 4px 6px 0">'+esc(inspLabel(r.key))+' set '+esc(fmtShort(r.setDate))+'</span>':'<span class="chip chip-amber" style="margin:0 4px 6px 0">🔔 '+esc(inspLabel(r.key))+' ready</span>').join('')+
+    (openTickets(job).length?'<span class="chip chip-grey" style="margin:0 4px 6px 0">🛠 '+openTickets(job).length+' warranty open</span>':'')+
     '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div><div class="muted" style="margin-top:4px">Checklist '+p.done+' of '+p.total+' · Inspections '+passed+' of 7</div></div>'+
     '<div class="job-card-footer"><span>'+(last?'Last work '+esc(fmtShort(last)):'No work logged yet')+'</span><span>'+(pc?'📷 '+pc:'')+'</span></div></div>';
 }
@@ -646,12 +827,12 @@ function houseSort(a,b){
   const k=j=>{const m=/^(\d+)\s+(.*)$/.exec(String(j.address||'').trim());return m?[m[2].toUpperCase(),+m[1]]:[String(j.address||'').toUpperCase(),0];};
   const x=k(a),y=k(b);return x[0]<y[0]?-1:x[0]>y[0]?1:x[1]-y[1];
 }
-function matchJob(j,q){const t=q.toLowerCase();return (j.address||'').toLowerCase().includes(t)||(j.subdivision||'').toLowerCase().includes(t)||(j.city||'').toLowerCase().includes(t)||(j.permit||'').toLowerCase().includes(t);}
+function matchJob(j,q){const t=q.toLowerCase();return (j.address||'').toLowerCase().includes(t)||(j.builder||'').toLowerCase().includes(t)||(j.subdivision||'').toLowerCase().includes(t)||(j.city||'').toLowerCase().includes(t)||(j.permit||'').toLowerCase().includes(t);}
 function renderJobs(){
-  let f=S.jobs.filter(j=>j.status!=='complete').sort(houseSort);
+  let f=S.jobs.filter(j=>j.status!=='complete');
   if(jobFilter!=='all')f=f.filter(j=>j.status===jobFilter);
   if(jobSearch)f=f.filter(j=>matchJob(j,jobSearch));
-  $('jobs-grid').innerHTML=f.map(jobCard).join('');
+  $('jobs-grid').innerHTML=grouped(f).map(g=>'<div class="grp-block">'+(showGroups?'<div class="grp-name">'+esc(g.label)+'</div>':'')+'<div class="jobs-grid">'+g.jobs.map(jobCard).join('')+'</div></div>').join('');
   $('jobs-empty').style.display=f.length?'none':'block';
 }
 function renderCompleted(){
@@ -669,12 +850,12 @@ function renderDetail(){
   const job=getJob(currentJobId);if(!job){$('detail-view').classList.remove('open');currentJobId=null;return;}
   const own=isOwner();
   const t=$('detail-title');t.innerHTML='<span class="pin">📍</span>'+esc(job.address);t.href=mapsUrl(job);
-  $('detail-meta').textContent=[cityFull(job.city),job.zip,job.subdivision,job.lot].filter(Boolean).join(' · ')||'Tap the address to open Maps';
+  $('detail-meta').textContent=[cityFull(job.city),job.zip,job.builder,job.subdivision,job.lot].filter(Boolean).join(' · ')||'Tap the address to open Maps';
   let h='';
   const fails=openFails(job);
   if(fails.length)h+='<div class="fail-box">'+fails.map(f=>'<div><b>✕ '+esc(f.label)+' inspection failed '+esc(fmtShort(f.entry.date))+'</b>'+(f.entry.note?': '+esc(f.entry.note):'')+'</div>').join('')+'</div>';
-  h+='<div class="action-row"><a class="btn btn-outline" href="'+esc(mapsUrl(job))+'" target="_blank" rel="noopener">📍 Open in Maps</a><button class="btn btn-outline" onclick="pickPhotos()">📷 Add Photos</button><button class="btn btn-outline" onclick="openLogModal()">+ Log Visit</button>'+
-    (own?'<button class="btn btn-outline" onclick="openJobModal(\''+job.id+'\')">✎ Edit</button><button class="btn '+(job.status==='complete'?'btn-outline':'btn-green')+'" onclick="toggleComplete()">'+(job.status==='complete'?'↩ Reactivate':'✓ Mark Complete')+'</button>':'')+'</div>';
+  h+='<div class="action-row">'+(job.status==='complete'?'':'<button class="btn btn-ready" onclick="openReadyModal()">🔔 Ready for Inspection</button>')+'<a class="btn btn-outline" href="'+esc(mapsUrl(job))+'" target="_blank" rel="noopener">📍 Open in Maps</a><button class="btn btn-outline" onclick="pickPhotos()">📷 Add Photos</button><button class="btn btn-outline" onclick="openLogModal()">+ Log Visit</button>'+
+    (own?'<button class="btn btn-outline" onclick="openJobModal(\''+job.id+'\')">✎ Edit</button><button class="btn '+(job.status==='complete'?'btn-outline':'btn-green')+'" onclick="toggleComplete()">'+(job.status==='complete'?'↩ Reactivate':'✓ Mark Complete')+'</button>'+(job.status==='complete'?'<button class="btn btn-outline" onclick="openForWarranty()">🛠 Open for warranty</button>':''):'')+'</div>';
   // project number and city inspection
   const iu=inspUrlFor(job);
   h+='<div class="full-card"><div class="full-card-title">Project number</div><div class="project-row">'+
@@ -682,21 +863,30 @@ function renderDetail(){
     (iu?'<a class="btn btn-primary btn-sm" href="'+esc(iu)+'" target="_blank" rel="noopener" onclick="copyProject(true)">City Inspection ↗</a>':own?'<button class="btn btn-outline btn-sm" onclick="openInspLinkModal()">+ Add city inspection link</button>':'')+
     (iu&&own?'<button class="icon-btn" title="Change link" onclick="openInspLinkModal()">✎</button>':'')+'</div>'+
     (iu&&job.permit?'<div class="form-hint">City Inspection copies the project number and opens the city site, so you can paste it there.</div>':'')+'</div>';
+  // builder contact
+  const cons=contactsFor(job);
+  h+='<div class="full-card"><div class="full-card-title">📞 Builder contact'+(own?'<button class="btn btn-outline btn-sm" onclick="openJobModal(\''+job.id+'\')">Change</button>':'')+'</div>'+
+    (cons.map(c=>contactRow(c,false)).join('')||'<div class="muted" style="padding:2px 0">'+(own?'No contact for this house yet. Add one in the Phone Book with the same builder and neighborhood as this house, or tap Change to pick one.':'No contact saved for this house yet.')+'</div>')+'</div>';
   h+=workDateBar();
+  const warr=job.status==='warranty'||job.status==='complete';
+  if(warr)h+=ticketsCard(job);
   // checklist
   const p=checklistProgress(job);
-  h+='<div class="full-card"><div class="full-card-title">✅ House checklist <span>'+p.done+' of '+p.total+' done</span></div>'+
+  if(!(job.status==='warranty'&&!(job.checklist||[]).length&&!own))h+='<div class="full-card"><div class="full-card-title">✅ House checklist <span>'+p.done+' of '+p.total+' done</span></div>'+
     ((job.checklist||[]).map(it=>checklistRow(job,it,false)).join('')||'<div class="muted" style="padding:6px 0">No checklist items yet.</div>');
   if(own)h+='<div class="add-row"><input class="form-input" id="new-item-text" placeholder="Add a to do for this house..." onkeydown="if(event.key===\'Enter\')addItem()"><button class="btn btn-primary" onclick="addItem()">Add</button><button class="btn btn-outline" onclick="openItemModal(\''+job.id+'\')">Add with details</button>'+((job.checklist||[]).length?'':'<button class="btn btn-outline" onclick="addStarter()">Add starter list</button>')+'</div>';
-  else h+='<div class="form-hint" style="margin-top:8px">Check off anything you finished, even if it was not assigned to you.</div>';
-  h+='</div>';
+  else if(!(job.status==='warranty'&&!(job.checklist||[]).length))h+='<div class="form-hint" style="margin-top:8px">Check off anything you finished, even if it was not assigned to you.</div>';
+  if(!(job.status==='warranty'&&!(job.checklist||[]).length&&!own))h+='</div>';
+  if(!warr)h+=ticketsCard(job);
   // inspections
   h+='<div class="full-card"><div class="full-card-title">🔍 Inspections'+(own?'':'<span>Entered by the office</span>')+'</div><table class="insp-table"><tbody>'+INSP_KEYS.map((k,i)=>{
     const entries=(job.inspLog||[]).filter(e=>e.key===k).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
     const l=latestInsp(job,k);
+    const rq=reqFor(job,k);
+    const rqLine=!rq?'':rq.setDate?'<div class="insp-hist"><span class="chip chip-blue">Set for '+esc(fmtDay(rq.setDate))+' · waiting on result</span></div>':'<div class="insp-hist"><span class="chip chip-amber">🔔 Ready · asked by '+esc(rq.byName||'')+', '+esc(fmtShort(rq.date))+'</span>'+(rq.note?' '+esc(rq.note):'')+(!own&&rq.by===S.me.id?' <a href="#" onclick="delReq(\''+job.id+'\',\''+rq.id+'\');return false" style="color:var(--ink-faint)">cancel</a>':'')+'</div>';
     const status=!l?'<span class="muted">Not yet</span>':l.result==='fail'?'<span class="insp-fail">✕ FAILED '+esc(fmtDate(l.date))+'</span>':'<span class="insp-pass">✓ Passed '+esc(fmtDate(l.date))+'</span>';
     const hist=entries.length>1||(l&&(l.result==='fail'||l.note))?entries.map(e=>'<div class="insp-hist"><span class="'+(e.result==='fail'?'f':'')+'">'+(e.result==='fail'?'✕ Failed ':'✓ Passed ')+esc(fmtShort(e.date))+'</span>'+(e.note?': '+esc(e.note):'')+(e.byName?' <span class="muted">('+esc(e.byName)+(own&&e.ts&&tsDate(e.ts)!==e.date?', entered '+esc(fmtShort(tsDate(e.ts))):'')+')</span>':'')+(own?' <a href="#" onclick="delInsp(\''+e.id+'\');return false" style="color:var(--ink-faint)">remove</a>':'')+'</div>').join(''):(own&&l?'<div class="insp-hist"><a href="#" onclick="delInsp(\''+l.id+'\');return false" style="color:var(--ink-faint)">remove</a></div>':'');
-    return '<tr><td class="insp-type">'+INSP_LABELS[i]+'</td><td>'+status+hist+'</td>'+(own?'<td style="text-align:right;white-space:nowrap"><button class="btn btn-sm btn-green" onclick="openInspModal(\''+k+'\',\'pass\')">Passed</button> <button class="btn btn-sm btn-red" onclick="openInspModal(\''+k+'\',\'fail\')">Failed</button></td>':'')+'</tr>';
+    return '<tr><td class="insp-type">'+INSP_LABELS[i]+'</td><td>'+status+rqLine+hist+'</td>'+(own?'<td style="text-align:right"><div class="q-btns" style="justify-content:flex-end"><button class="btn btn-sm btn-outline" onclick="openSetModal(\''+job.id+'\',\''+(rq?rq.id:'')+'\',\''+k+'\')">'+(rq&&rq.setDate?'Change date':'Set date')+'</button><button class="btn btn-sm btn-green" onclick="openInspModal(\''+k+'\',\'pass\')">Passed</button><button class="btn btn-sm btn-red" onclick="openInspModal(\''+k+'\',\'fail\')">Failed</button></div></td>':'')+'</tr>';
   }).join('')+'</tbody></table></div>';
   // phases
   h+='<div class="full-card"><div class="full-card-title">Phase progress</div>'+job.phases.map((ph,i)=>'<div class="phase-row '+(ph.status==='done'?'done':ph.status==='inprogress'?'inprogress':'')+'"><span class="phase-name">'+esc(ph.name)+'</span>'+(ph.date?'<span class="phase-date">'+esc(fmtShort(ph.date))+(ph.by?' · '+esc(ph.by):'')+'</span>':'')+'<select class="phase-status-select" onchange="setPhase('+i+',this.value)"><option value="pending"'+(ph.status==='pending'?' selected':'')+'>Pending</option><option value="inprogress"'+(ph.status==='inprogress'?' selected':'')+'>In progress</option><option value="done"'+(ph.status==='done'?' selected':'')+'>Done</option></select></div>').join('')+'</div>';
@@ -716,9 +906,9 @@ function renderDetail(){
   h+='<div class="full-card"><div class="full-card-title">👷 Work log <button class="btn btn-outline btn-sm" onclick="openLogModal()">+ Log Visit</button></div>'+(((job.log||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)).map(l=>'<div class="log-entry"><div class="log-avatar">'+esc(getInitials(l.worker))+'</div><div class="log-info"><div class="log-worker">'+esc(l.worker)+'</div><div class="log-detail">'+esc(l.phase||'')+'</div>'+(l.notes?'<div class="log-notes">'+esc(l.notes)+'</div>':'')+'</div><div class="log-date">'+esc(fmtDate(l.date))+(own&&l.ts&&tsDate(l.ts)!==l.date?'<br>entered '+esc(fmtShort(tsDate(l.ts))):'')+(own||l.workerId===S.me.id?'<br><a href="#" onclick="delLog(\''+l.id+'\');return false" style="color:var(--ink-faint)">remove</a>':'')+'</div></div>').join('')||'<div class="muted">No visits logged yet</div>')+'</div>';
   // info
   h+='<div class="full-card"><div class="full-card-title">House info</div><div style="font-size:14px;line-height:1.7"><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span>'+(job.completedDate?' <span class="muted">completed '+esc(fmtDate(job.completedDate))+'</span>':'')+
-    (job.subdivision?'<div><span class="muted">Subdivision</span> '+esc(job.subdivision)+'</div>':'')+(job.lot?'<div><span class="muted">Lot</span> '+esc(job.lot)+'</div>':'')+(job.notes?'<div><span class="muted">Notes</span> '+esc(job.notes)+'</div>':'')+
+    (job.builder?'<div><span class="muted">Builder</span> '+esc(job.builder)+'</div>':'')+(job.subdivision?'<div><span class="muted">Neighborhood</span> '+esc(job.subdivision)+'</div>':'')+(job.lot?'<div><span class="muted">Lot</span> '+esc(job.lot)+'</div>':'')+(job.notes?'<div><span class="muted">Notes</span> '+esc(job.notes)+'</div>':'')+
     '<div style="margin-top:6px">'+(job.pin?'<span class="muted">📍 Map pin saved for this house.</span> '+(own?'<a href="#" onclick="setPin(\'\');return false">remove pin</a>':''):'<button class="btn btn-outline btn-sm" onclick="dropPin()">📍 Street not in Maps? Save a pin from where I am standing</button>')+'</div></div></div>';
-  const keep={};['new-item-text','fixture-name','photo-phase','fixture-phase'].forEach(id=>{const el=$(id);if(el)keep[id]=el.value;});
+  const keep={};['new-item-text','new-ticket-text','fixture-name','photo-phase','fixture-phase'].forEach(id=>{const el=$(id);if(el)keep[id]=el.value;});
   DOC_KEYS.forEach(k=>{const el=$('doc-'+k);if(el&&document.activeElement===el)keep['doc-'+k]=el.value;});
   $('detail-body').innerHTML=h;
   Object.keys(keep).forEach(id=>{const el=$(id);if(el&&keep[id]!=null)el.value=keep[id];});
@@ -740,24 +930,27 @@ function openItemModal(jobId,itemId){
     '<div class="form-group"><label class="form-label">What needs to be done</label><input class="form-input" id="it-text" data-focus value="'+esc(it?it.text:($('new-item-text')?$('new-item-text').value:''))+'"></div>'+
     '<div class="form-row"><div class="form-group"><label class="form-label">How many</label><input class="form-input" id="it-qty" type="number" min="1" max="99" value="'+(it?Number(it.qty)||1:1)+'"><div class="form-hint">Use more than 1 for counts, like 5 toilets.</div></div>'+
     '<div class="form-group"><label class="form-label">Assign to (optional)</label><select class="form-select" id="it-assignee">'+userOptions(it?it.assignee:'','Nobody, anyone can do it')+'</select></div></div>'+
-    '<div class="form-group"><label class="form-label">Due date (optional)</label><input class="form-input" id="it-due" type="date" value="'+esc(it?it.due||'':'')+'"><div class="form-hint">Only the person assigned sees the assignment. Everyone sees the item and who checked it off.</div></div>',
+    '<div class="form-row"><div class="form-group"><label class="form-label">Due date (optional)</label><input class="form-input" id="it-due" type="date" value="'+esc(it?it.due||'':'')+'"></div><div class="form-group"><label class="form-label">Time (optional)</label><input class="form-input" id="it-time" type="time" value="'+esc(it?it.time||'':'')+'"></div></div><div class="form-hint" style="margin-bottom:10px">Only the person assigned sees the assignment. Everyone sees the item and who checked it off. Add a time only when they must be there at a set time.</div>',
     buttons:(it?[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete "'+it.text+'" from this house?'))return;closeModal();mutate('jobOp',{jobId,op:'itemDel',args:{itemId}});}}]:[]).concat([{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
-      const args={itemId:it?it.id:genId('c_'),text:$('it-text').value.trim(),qty:Number($('it-qty').value)||1,assignee:$('it-assignee').value,due:$('it-due').value};
+      const args={itemId:it?it.id:genId('c_'),text:$('it-text').value.trim(),qty:Number($('it-qty').value)||1,assignee:$('it-assignee').value,due:$('it-due').value,time:$('it-time').value};
       if(!args.text){toast('Type what needs to be done.',true);return;}
       if(!it&&$('new-item-text'))$('new-item-text').value='';
       closeModal();mutate('jobOp',{jobId,op:it?'itemEdit':'itemAdd',args});}}])});
 }
-function openInspModal(key,result){
+function openInspModal(key,result,jobId){
+  jobId=jobId||currentJobId;const job=getJob(jobId);if(!job)return;
   const label=INSP_LABELS[INSP_KEYS.indexOf(key)];
+  const rq=reqFor(job,key);const def=rq&&rq.setDate&&rq.setDate<=todayStr()?rq.setDate:todayStr();
   openModal({title:label+' inspection: '+(result==='fail'?'Failed':'Passed'),body:
-    '<div class="form-group"><label class="form-label">Date of the inspection</label><input class="form-input" id="insp-date" type="date" max="'+todayStr()+'" value="'+todayStr()+'"></div>'+
+    '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
+    '<div class="form-group"><label class="form-label">Date of the inspection</label><input class="form-input" id="insp-date" type="date" max="'+todayStr()+'" value="'+def+'"></div>'+
     '<div class="form-group"><label class="form-label">'+(result==='fail'?'Why did it fail?':'Note (optional)')+'</label><textarea class="form-textarea" id="insp-note" '+(result==='fail'?'data-focus ':'')+'placeholder="'+(result==='fail'?'Example: missing nail plates in the upstairs bath':'')+'"></textarea></div>'+
     (result==='fail'?'<div class="form-hint">The house shows in red until a passed inspection is entered. The failure stays in the history.</div>':''),
     buttons:[{label:'Cancel',fn:closeModal},{label:result==='fail'?'Save as Failed':'Save as Passed',cls:result==='fail'?'btn-red':'btn-green',fn:()=>{
       const date=$('insp-date').value,note=$('insp-note').value.trim();
       if(!date){toast('Pick the date.',true);return;}
       if(result==='fail'&&!note){toast('Add a note saying why it failed.',true);return;}
-      closeModal();jobOp('insp',{entryId:genId('i_'),key,result,date,note});}}]});
+      closeModal();mutate('jobOp',{jobId,op:'insp',args:{entryId:genId('i_'),key,result,date,note}},()=>{job.inspReqs=(job.inspReqs||[]).filter(x=>x.key!==key);});}}]});
 }
 function delInsp(entryId){if(!confirm('Remove this inspection entry?'))return;jobOp('inspDel',{entryId});}
 function setPhase(idx,status){jobOp('phase',{idx,status,date:wd()});}
@@ -782,17 +975,108 @@ function toggleComplete(){
   if(job.status==='complete'){if(!confirm('Move "'+job.address+'" back to Active?'))return;jobOp('status',{status:'active'});}
   else{if(!confirm('Mark "'+job.address+'" complete? It moves to the Completed tab and its history is kept.'))return;jobOp('status',{status:'complete',date:todayStr()});}
 }
+function openForWarranty(){const job=getJob(currentJobId);if(!job)return;if(!confirm('Open "'+job.address+'" for warranty work? It goes back on the Houses list with the Warranty label.'))return;jobOp('status',{status:'warranty'});}
+
+// ---------- service and warranty tickets
+function openTickets(job){return (job.tickets||[]).filter(t=>!t.done);}
+function ticketRow(job,t,showHouse){
+  const own=isOwner(),today=todayStr();
+  const box='<div class="cl-box'+(t.done?' on':'')+'" role="checkbox" aria-checked="'+!!t.done+'" onclick="'+(t.done?'undoTicket':'openTicketDone')+'(\''+job.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>';
+  let chips=showHouse?'<span class="chip chip-grey">🛠 warranty</span>':'';
+  const when=whenText(t.date,t.time);
+  if(t.assignee)chips+='<span class="chip chip-blue">'+esc((t.assignee===S.me.id?'You':userName(t.assignee))||'Assigned')+(when?' · '+esc(when):'')+'</span>';
+  else if(when)chips+='<span class="chip chip-grey">'+esc(when)+'</span>';
+  if(!t.done&&t.date&&t.date<today)chips+='<span class="chip chip-red">past due</span>';
+  const house=showHouse?'<span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span>':'';
+  const done=t.done?'<div class="cl-sub"><span>Done '+esc(fmtShort(t.doneDate))+(t.doneByName?' by '+esc(t.doneByName):'')+(t.doneNote?': '+esc(t.doneNote):'')+'</span></div>':'';
+  return '<div class="cl-row'+(t.done?' done':'')+'">'+box+'<div class="cl-main"><div class="cl-text">'+esc(t.text)+'</div><div class="cl-sub">'+house+chips+'</div>'+done+'</div>'+(own&&!showHouse?'<div class="cl-side"><button class="icon-btn" title="Edit" aria-label="Edit ticket" onclick="openTicketModal(\''+job.id+'\',\''+t.id+'\')">✎</button></div>':'')+'</div>';
+}
+function ticketsCard(job){
+  const own=isOwner(),list=job.tickets||[];
+  if(!own&&!list.length)return '';
+  const open=list.filter(t=>!t.done).sort((a,b)=>{const x=a.date||'9999',y=b.date||'9999';return x<y?-1:x>y?1:byTime(a,b);});
+  const done=list.filter(t=>t.done).sort((a,b)=>a.doneDate<b.doneDate?1:-1);
+  let h='<div class="full-card"><div class="full-card-title">🛠 Service and warranty <span>'+open.length+' open</span></div>'+
+    (open.concat(done).map(t=>ticketRow(job,t,false)).join('')||'<div class="muted" style="padding:6px 0">No warranty tickets on this house.</div>');
+  if(own)h+='<div class="add-row"><input class="form-input" id="new-ticket-text" placeholder="Add a warranty ticket for this house..." onkeydown="if(event.key===\'Enter\')addTicket()"><button class="btn btn-primary" onclick="addTicket()">Add</button><button class="btn btn-outline" onclick="openTicketModal(\''+job.id+'\')">Add with details</button></div>';
+  else h+='<div class="form-hint" style="margin-top:8px">Tap the box when a ticket is finished and write what was done.</div>';
+  return h+'</div>';
+}
+function addTicket(){const el=$('new-ticket-text');const text=el.value.trim();if(!text)return;el.value='';jobOp('ticketAdd',{ticketId:genId('w_'),text});}
+function openTicketModal(jobId,ticketId){
+  const job=getJob(jobId);if(!job)return;const t=ticketId?(job.tickets||[]).find(x=>x.id===ticketId):null;
+  openModal({title:t?'Edit warranty ticket':'Add warranty ticket',body:
+    '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
+    '<div class="form-group"><label class="form-label">What needs to be fixed</label><textarea class="form-textarea" id="wt-text" data-focus>'+esc(t?t.text:($('new-ticket-text')?$('new-ticket-text').value:''))+'</textarea></div>'+
+    '<div class="form-group"><label class="form-label">Assign to (optional)</label><select class="form-select" id="wt-assignee">'+userOptions(t?t.assignee:'','Nobody yet')+'</select></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Day (optional)</label><input class="form-input" id="wt-day" type="date" value="'+esc(t?t.date||'':'')+'"></div><div class="form-group"><label class="form-label">Time (optional)</label><input class="form-input" id="wt-time" type="time" value="'+esc(t?t.time||'':'')+'"></div></div>'+
+    (t&&t.done?'<div class="form-group"><label class="form-label">What was done</label><textarea class="form-textarea" id="wt-done">'+esc(t.doneNote||'')+'</textarea></div>':'')+
+    '<div class="form-hint">Warranty tickets stay in this house\'s history and are kept apart from the build checklist. Add a time only when someone must be there at a set time.</div>',
+    buttons:(t?[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete this warranty ticket?'))return;closeModal();mutate('jobOp',{jobId,op:'ticketDel',args:{ticketId}});}}]:[]).concat([{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const args={ticketId:t?t.id:genId('w_'),text:$('wt-text').value.trim(),assignee:$('wt-assignee').value,day:$('wt-day').value,time:$('wt-time').value};
+      if(t&&t.done&&$('wt-done'))args.doneNote=$('wt-done').value.trim();
+      if(!args.text){toast('Type what needs to be fixed.',true);return;}
+      if(!t&&$('new-ticket-text'))$('new-ticket-text').value='';
+      closeModal();mutate('jobOp',{jobId,op:t?'ticketEdit':'ticketAdd',args});}}])});
+}
+function openTicketDone(jobId,ticketId){
+  const job=getJob(jobId);const t=job&&(job.tickets||[]).find(x=>x.id===ticketId);if(!t)return;
+  openModal({title:'Finish warranty ticket',body:
+    '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b><br>'+esc(t.text)+'</p>'+
+    '<div class="form-group"><label class="form-label">Date the work was done</label><input class="form-input" id="wd-date" type="date" max="'+todayStr()+'" value="'+wd()+'"></div>'+
+    '<div class="form-group"><label class="form-label">What was done</label><textarea class="form-textarea" id="wd-note" data-focus placeholder="Example: replaced the p trap under the kitchen sink"></textarea></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Mark finished',cls:'btn-green',fn:()=>{
+      const date=$('wd-date').value||todayStr(),note=$('wd-note').value.trim();
+      if(!note){toast('Write what was done.',true);return;}
+      closeModal();mutate('jobOp',{jobId,op:'ticketDone',args:{ticketId,date,note}},()=>{t.done=true;t.doneDate=date;t.doneNote=note;t.doneBy=S.me.id;t.doneByName=S.me.name;});}}]});
+}
+function undoTicket(jobId,ticketId){
+  const job=getJob(jobId);const t=job&&(job.tickets||[]).find(x=>x.id===ticketId);if(!t)return;
+  if(!isOwner()&&t.doneBy!==S.me.id){toast('Only the person who finished this, or an owner, can reopen it.',true);return;}
+  if(!confirm('Reopen "'+t.text+'"?'))return;
+  mutate('jobOp',{jobId,op:'ticketUndo',args:{ticketId}},()=>{t.done=false;t.doneDate='';t.doneNote='';t.doneByName='';});
+}
+
+// ---------- phone book
+function renderPhoneBook(){
+  const q=pbSearch.trim().toLowerCase();
+  const all=(S.contacts||[]).slice();
+  const list=q?all.filter(c=>[c.name,c.builder,c.neighborhood,c.phone,c.notes].some(v=>String(v||'').toLowerCase().includes(q))):all;
+  $('pb-count').textContent=list.length+' of '+all.length+' contacts';
+  const by={};list.forEach(c=>{const k=(c.builder||'').trim()||'No builder';(by[k]=by[k]||[]).push(c);});
+  const names=Object.keys(by).sort((a,b)=>a==='No builder'?1:b==='No builder'?-1:a.localeCompare(b));
+  $('pb-list').innerHTML=names.map(n=>'<div class="list-card"><div class="list-head">'+esc(n)+'<span>'+by[n].length+(by[n].length===1?' contact':' contacts')+'</span></div>'+
+    by[n].sort((a,b)=>(a.neighborhood||'').localeCompare(b.neighborhood||'')||a.name.localeCompare(b.name)).map(c=>contactRow(c,true)).join('')+'</div>').join('')||
+    '<div class="empty-state">'+(all.length?'No contacts match that search.':isOwner()?'No contacts yet.<br>Tap + Add contact to start the phone book.':'No contacts yet. Brenda or Teodoro will add them.')+'</div>';
+}
+function openContactModal(id){
+  if(!isOwner())return;
+  const c=id?(S.contacts||[]).find(x=>x.id===id):null;const v=k=>esc(c?c[k]||'':'');
+  openModal({title:c?'Edit contact':'Add contact',body:
+    '<div class="form-group"><label class="form-label">Name</label><input class="form-input" id="ct-name" '+(c?'':'data-focus ')+'value="'+v('name')+'"></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Builder</label><input class="form-input" id="ct-builder" value="'+v('builder')+'" list="ct-builders">'+dataList('ct-builders',knownBuilders())+'</div><div class="form-group"><label class="form-label">Neighborhood</label><input class="form-input" id="ct-hood" value="'+v('neighborhood')+'" list="ct-hoods">'+dataList('ct-hoods',knownHoods())+'</div></div>'+
+    '<div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="ct-phone" type="tel" inputmode="tel" value="'+v('phone')+'" placeholder="832 555 0100"></div>'+
+    '<div class="form-group"><label class="form-label">Notes (optional)</label><input class="form-input" id="ct-notes" value="'+v('notes')+'" placeholder="Superintendent, best time to call..."></div>'+
+    '<div class="form-hint">A contact shows on every house with the same builder and neighborhood. Leave the neighborhood blank if this person covers all of that builder\'s houses.</div>',
+    buttons:(c?[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete '+c.name+' from the phone book?'))return;closeModal();mutate('contactDel',{id:c.id},()=>{S.contacts=S.contacts.filter(x=>x.id!==c.id);});}}]:[]).concat([{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const contact={id:c?c.id:genId('p_'),name:$('ct-name').value.trim(),builder:$('ct-builder').value.trim(),neighborhood:$('ct-hood').value.trim(),phone:$('ct-phone').value.trim(),notes:$('ct-notes').value.trim()};
+      if(!contact.name){toast('Enter the name.',true);return;}
+      closeModal();mutate('contactSave',{contact},()=>{const i=S.contacts.findIndex(x=>x.id===contact.id);if(i>=0)S.contacts[i]=contact;else S.contacts.push(contact);});}}])});
+}
+
 function openJobModal(id){
   const job=id?getJob(id):null;const v=k=>esc(job?job[k]||'':'');
   openModal({title:job?'Edit house':'Add new house',body:
     '<div class="form-row"><div class="form-group" style="flex:2"><label class="form-label">Street address</label><input class="form-input" id="nj-address" '+(job?'':'data-focus ')+'value="'+v('address')+'" placeholder="1234 Oak Lane"></div><div class="form-group"><label class="form-label">Project #</label><input class="form-input" id="nj-permit" inputmode="numeric" value="'+v('permit')+'"></div></div>'+
     '<div class="form-row"><div class="form-group"><label class="form-label">City</label><input class="form-input" id="nj-city" value="'+esc(job?job.city||'':'HOU TX')+'" list="city-list"><datalist id="city-list">'+knownCities().map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist></div><div class="form-group"><label class="form-label">Zip</label><input class="form-input" id="nj-zip" inputmode="numeric" value="'+v('zip')+'"></div></div>'+
-    '<div class="form-row"><div class="form-group"><label class="form-label">Subdivision</label><input class="form-input" id="nj-subdivision" value="'+v('subdivision')+'"></div><div class="form-group"><label class="form-label">Lot / Unit</label><input class="form-input" id="nj-lot" value="'+v('lot')+'"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Builder</label><input class="form-input" id="nj-builder" value="'+v('builder')+'" list="nj-builders">'+dataList('nj-builders',knownBuilders())+'</div><div class="form-group"><label class="form-label">Neighborhood</label><input class="form-input" id="nj-subdivision" value="'+v('subdivision')+'" list="nj-hoods">'+dataList('nj-hoods',knownHoods())+'</div></div>'+
+    '<div class="form-hint" style="margin:-6px 0 10px">The builder and neighborhood decide where this house sits on the list.</div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Builder contact</label><select class="form-select" id="nj-contact"><option value="">Automatic, from the Phone Book</option>'+(S.contacts||[]).slice().sort((a,b)=>a.name.localeCompare(b.name)).map(c=>'<option value="'+esc(c.id)+'"'+(job&&job.contactId===c.id?' selected':'')+'>'+esc(c.name+([c.builder,c.neighborhood].filter(Boolean).length?' ('+[c.builder,c.neighborhood].filter(Boolean).join(', ')+')':''))+'</option>').join('')+'</select></div><div class="form-group"><label class="form-label">Lot / Unit</label><input class="form-input" id="nj-lot" value="'+v('lot')+'"></div></div>'+
     '<div class="form-group"><label class="form-label">Status</label><select class="form-select" id="nj-status">'+['active','pending','warranty','complete'].map(s=>'<option value="'+s+'"'+((job?job.status:'active')===s?' selected':'')+'>'+STATUS_LABELS[s]+'</option>').join('')+'</select></div>'+
     '<div class="form-group"><label class="form-label">City inspection link for this house only (optional)</label><input class="form-input" id="nj-inspurl" value="'+v('inspUrl')+'" placeholder="Leave blank to use the link for its city"></div>'+
     '<div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="nj-notes">'+v('notes')+'</textarea></div>',
     buttons:[{label:'Cancel',fn:closeModal},{label:job?'Save changes':'Add house',cls:'btn-primary',fn:()=>{
-      const a={address:$('nj-address').value.trim(),permit:$('nj-permit').value.trim(),city:$('nj-city').value.trim(),zip:$('nj-zip').value.trim(),subdivision:$('nj-subdivision').value.trim(),lot:$('nj-lot').value.trim(),status:$('nj-status').value,inspUrl:$('nj-inspurl').value.trim(),notes:$('nj-notes').value.trim()};
+      const a={address:$('nj-address').value.trim(),permit:$('nj-permit').value.trim(),city:$('nj-city').value.trim(),zip:$('nj-zip').value.trim(),subdivision:$('nj-subdivision').value.trim(),builder:$('nj-builder').value.trim(),contactId:$('nj-contact').value,lot:$('nj-lot').value.trim(),status:$('nj-status').value,inspUrl:$('nj-inspurl').value.trim(),notes:$('nj-notes').value.trim()};
       if(!a.address){toast('Enter the street address.',true);return;}
       if(a.inspUrl&&!safeUrl(a.inspUrl)){toast('The link must start with https://',true);return;}
       closeModal();
@@ -884,24 +1168,28 @@ function renderTeam(){
   if(!isOwner()){$('team-body').innerHTML='';return;}
   const today=todayStr();const d=teamDate||today;
   const people=activeUsers().slice().sort((a,b)=>(a.role===b.role?0:a.role==='employee'?-1:1));
-  const jobOpts='<option value="">No house</option>'+S.jobs.filter(j=>j.status!=='complete').sort(houseSort).map(j=>'<option value="'+j.id+'">'+esc(j.address)+'</option>').join('');
+  const jobOpts='<option value="">No house</option>'+listSort(S.jobs.filter(j=>j.status!=='complete')).map(j=>'<option value="'+j.id+'">'+esc(j.address)+'</option>').join('');
   let h='<div class="section-title">Daily to do lists</div><div class="toolbar no-print" style="justify-content:flex-start"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,-1)+'\')">◀</button><input type="date" class="search-input" style="max-width:170px;flex:none" value="'+d+'" onchange="setTeamDate(this.value)"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,1)+'\')">▶</button>'+(d!==today?'<button class="btn btn-outline" onclick="setTeamDate(\'\')">Today</button>':'')+'<b>'+esc(fmtDay(d))+'</b><span class="muted">Each person sees only their own list.</span></div><div class="team-grid">';
   people.forEach(u=>{
     const mine=S.tasks.filter(t=>t.assigneeId===u.id);
     const late=d===today?mine.filter(t=>!t.done&&t.date<today):[];
-    const day=mine.filter(t=>t.date===d);
+    const day=mine.filter(t=>t.date===d).sort(byTime);
+    const tix=[];S.jobs.forEach(j=>(j.tickets||[]).forEach(t=>{if(t.assignee===u.id&&(t.date===d||(d===today&&!t.done&&t.date&&t.date<today)))tix.push({j,t});}));
     const items=[];S.jobs.forEach(j=>{if(j.status==='complete')return;(j.checklist||[]).forEach(it=>{if(it.assignee===u.id&&(it.due===d||(d===today&&it.due&&it.due<today&&itemDone(it)<(Number(it.qty)||1))))items.push({j,it});});});
     const open=day.filter(t=>!t.done).length+late.length;
     h+='<div class="person-card"><div class="person-name"><span>'+esc(u.name)+(u.role==='owner'?' <span class="chip chip-grey">owner</span>':'')+'</span><span class="muted">'+open+' open</span></div>'+
       late.map(t=>taskRow(t,true)).join('')+day.map(t=>taskRow(t,true)).join('')+
       items.map(x=>'<div class="cl-row'+(itemDone(x.it)>=(Number(x.it.qty)||1)?' done':'')+'"><div class="cl-box'+(itemDone(x.it)>=(Number(x.it.qty)||1)?' on':'')+'" style="cursor:default">'+(itemDone(x.it)>=(Number(x.it.qty)||1)?'✓':'')+'</div><div class="cl-main"><div class="cl-text">'+esc(x.it.text)+'</div><div class="cl-sub"><span class="house-link" onclick="openDetail(\''+x.j.id+'\')">'+esc(x.j.address)+'</span><span class="chip chip-grey">house checklist</span>'+(x.it.due<today&&itemDone(x.it)<(Number(x.it.qty)||1)?'<span class="chip chip-red">past due</span>':'')+'</div></div></div>').join('')+
-      (!late.length&&!day.length&&!items.length?'<div class="muted" style="padding:6px 0">Nothing assigned for this day.</div>':'')+
-      '<div class="add-row"><input class="form-input" id="tt-'+u.id+'" placeholder="Add a to do for '+esc(u.name)+'..." onkeydown="if(event.key===\'Enter\')addTask(\''+u.id+'\')"><select class="form-select" id="tj-'+u.id+'" style="max-width:150px">'+jobOpts+'</select><button class="btn btn-primary" onclick="addTask(\''+u.id+'\')">Add</button></div></div>';
+      tix.map(x=>'<div class="cl-row'+(x.t.done?' done':'')+'"><div class="cl-box'+(x.t.done?' on':'')+'" style="cursor:default">'+(x.t.done?'✓':'')+'</div><div class="cl-main"><div class="cl-text">'+esc(x.t.text)+'</div><div class="cl-sub"><span class="house-link" onclick="openDetail(\''+x.j.id+'\')">'+esc(x.j.address)+'</span><span class="chip chip-grey">🛠 warranty'+(x.t.time?' · '+esc(fmtTime(x.t.time)):'')+'</span>'+(!x.t.done&&x.t.date<today?'<span class="chip chip-red">past due</span>':'')+'</div></div></div>').join('')+
+      (!late.length&&!day.length&&!items.length&&!tix.length?'<div class="muted" style="padding:6px 0">Nothing assigned for this day.</div>':'')+
+      '<div class="add-row"><input class="form-input" id="tt-'+u.id+'" placeholder="Add a to do for '+esc(u.name)+'..." onkeydown="if(event.key===\'Enter\')addTask(\''+u.id+'\')"><select class="form-select" id="tj-'+u.id+'" style="max-width:150px">'+jobOpts+'</select><input class="form-input" type="time" id="tm-'+u.id+'" title="Time (optional)" aria-label="Time (optional)" style="max-width:118px;min-width:100px;flex:none"><button class="btn btn-primary" onclick="addTask(\''+u.id+'\')">Add</button></div></div>';
   });
   h+='</div>';
   h+='<div class="section-title">Team and PINs</div><div class="list-card">'+S.users.map(u=>'<div class="user-row"><div style="flex:1;min-width:140px"><b>'+esc(u.name)+'</b> <span class="chip chip-grey">'+esc(u.role)+'</span> '+(u.active?(u.hasPin?'<span class="chip chip-blue">PIN set</span>':'<span class="chip chip-amber">needs a PIN</span>'):'<span class="chip chip-red">turned off</span>')+'</div><button class="btn btn-outline btn-sm" onclick="openPinModal(\''+u.id+'\')">'+(u.hasPin?'Change PIN':'Set PIN')+'</button>'+(u.id===S.me.id?'':'<button class="btn btn-outline btn-sm" onclick="setUserActive(\''+u.id+'\','+(!u.active)+')">'+(u.active?'Turn off':'Turn back on')+'</button>')+'</div>').join('')+
     '<div class="add-row" style="margin:8px 0"><button class="btn btn-primary" onclick="openAddUserModal()">+ Add a person</button></div><div class="form-hint" style="padding-bottom:8px">Changing a PIN or turning someone off logs their phone out right away. Use that for a lost phone or when someone leaves.</div></div>';
   h+='<div class="section-title">Settings</div><div class="list-card" style="padding:12px"><div class="form-group"><label class="form-label">Starter checklist for new houses (one item per line)</label><textarea class="form-textarea" id="set-template" oninput="this.dataset.dirty=1" style="min-height:170px">'+esc((S.settings.checklistTemplate||[]).join('\n'))+'</textarea><div class="form-hint">Changing this only affects houses added from now on. Inspections are tracked in their own section, so they do not need to be on this list.</div></div><button class="btn btn-primary" onclick="saveTemplate()">Save starter checklist</button></div>'+
+    '<div class="list-card" style="padding:12px"><label class="form-label">List order (builder, then neighborhood)</label><div class="form-hint" style="margin-bottom:6px">Houses show in this order on the Inspections and Houses lists. Use the arrows to move a group. Use the pencil to fix the builder or neighborhood for every house in a group at once.</div>'+
+    groupsNow().map((g,i,a)=>'<div class="order-row"><div style="flex:1;min-width:0"><b>'+esc(g.label)+'</b> <span class="muted">'+g.n+(g.n===1?' house':' houses')+'</span></div><button class="icon-btn" aria-label="Move up" title="Move up"'+(i?'':' disabled')+' onclick="moveGroup('+i+',-1)">▲</button><button class="icon-btn" aria-label="Move down" title="Move down"'+(i<a.length-1?'':' disabled')+' onclick="moveGroup('+i+',1)">▼</button><button class="icon-btn" aria-label="Edit group" title="Change builder or neighborhood" onclick="openGroupModal('+i+')">✎</button></div>').join('')+'</div>'+
     '<div class="list-card" style="padding:12px"><label class="form-label">City inspection links</label><div class="form-hint" style="margin-bottom:8px">One link per city. The City Inspection button on each house uses the link for its city.</div>'+knownCities().map((c,i)=>'<div class="form-row" style="margin-bottom:6px;align-items:center"><div style="width:140px;font-weight:600;font-size:13px">'+esc(c)+'</div><input class="form-input" oninput="this.dataset.dirty=1" data-city="'+esc(c)+'" value="'+esc((S.settings.inspLinks||{})[c]||'')+'" placeholder="https://..."></div>').join('')+'<button class="btn btn-primary" style="margin-top:6px" onclick="saveLinks()">Save links</button></div>';
   const tplEl=$('set-template');const tplKeep=tplEl&&tplEl.value!==(S.settings.checklistTemplate||[]).join('\n')&&tplEl.dataset.dirty?tplEl.value:null;
   const linkKeep={};document.querySelectorAll('#team-body input[data-city]').forEach(el=>{if(el.dataset.dirty)linkKeep[el.getAttribute('data-city')]=el.value;});
@@ -910,9 +1198,27 @@ function renderTeam(){
   document.querySelectorAll('#team-body input[data-city]').forEach(el=>{const k=el.getAttribute('data-city');if(k in linkKeep){el.value=linkKeep[k];el.dataset.dirty='1';}});
 }
 function setTeamDate(v){teamDate=v;render();}
+function groupsNow(){return grouped(S.jobs.filter(j=>j.status!=='complete')).map(g=>({key:g.key,label:g.label,n:g.jobs.length,builder:g.jobs[0].builder||'',hood:g.jobs[0].subdivision||''}));}
+function moveGroup(i,dir){
+  const keys=groupsNow().map(g=>g.key);const j=i+dir;if(j<0||j>=keys.length)return;
+  const x=keys[i];keys[i]=keys[j];keys[j]=x;
+  const order=keys.concat((S.settings.groupOrder||[]).filter(k=>keys.indexOf(k)<0));
+  mutate('settingsSave',{groupOrder:order},()=>{S.settings.groupOrder=order;});
+}
+function openGroupModal(i){
+  const g=groupsNow()[i];if(!g)return;
+  openModal({title:'Change this group',body:
+    '<p style="font-size:14px;margin-bottom:10px">This changes all <b>'+g.n+(g.n===1?' house':' houses')+'</b> in <b>'+esc(g.label)+'</b>.</p>'+
+    '<div class="form-group"><label class="form-label">Builder</label><input class="form-input" id="gp-builder" data-focus value="'+esc(g.builder)+'" list="gp-builders">'+dataList('gp-builders',knownBuilders())+'</div>'+
+    '<div class="form-group"><label class="form-label">Neighborhood</label><input class="form-input" id="gp-hood" value="'+esc(g.hood)+'" list="gp-hoods">'+dataList('gp-hoods',knownHoods())+'</div>'+
+    '<div class="form-hint">To move only one house, open that house and tap Edit.</div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const to={builder:$('gp-builder').value.trim(),neighborhood:$('gp-hood').value.trim()};
+      closeModal();mutate('groupEdit',{from:{builder:g.builder,neighborhood:g.hood},to}).then(ok=>{if(ok)toast('Group updated');});}}]});
+}
 function addTask(uid){
   const el=$('tt-'+uid);const text=el.value.trim();if(!text)return;
-  const task={id:genId('t_'),assigneeId:uid,date:teamDate||todayStr(),text,jobId:$('tj-'+uid).value};el.value='';
+  const task={id:genId('t_'),assigneeId:uid,date:teamDate||todayStr(),text,jobId:$('tj-'+uid).value,time:$('tm-'+uid)?$('tm-'+uid).value:''};el.value='';
   mutate('taskAdd',{task},()=>{S.tasks.push(Object.assign({done:false,doneDate:'',doneByName:''},task));});
 }
 function openTaskModal(id){
@@ -920,10 +1226,11 @@ function openTaskModal(id){
   openModal({title:'Edit to do',body:
     '<div class="form-group"><label class="form-label">To do</label><input class="form-input" id="tk-text" value="'+esc(t.text)+'"></div>'+
     '<div class="form-row"><div class="form-group"><label class="form-label">For</label><select class="form-select" id="tk-user">'+userOptions(t.assigneeId)+'</select></div><div class="form-group"><label class="form-label">Day</label><input class="form-input" id="tk-date" type="date" value="'+esc(t.date)+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">Time (optional)</label><input class="form-input" id="tk-time" type="time" value="'+esc(t.time||'')+'"></div>'+
     '<div class="form-group"><label class="form-label">House (optional)</label><select class="form-select" id="tk-job"><option value="">No house</option>'+S.jobs.filter(j=>j.status!=='complete'||j.id===t.jobId).map(j=>'<option value="'+j.id+'"'+(j.id===t.jobId?' selected':'')+'>'+esc(j.address)+'</option>').join('')+'</select></div>'+
     (t.done?'<div class="form-hint">Done '+esc(fmtDate(t.doneDate))+(t.doneByName?' by '+esc(t.doneByName):'')+'.</div>':''),
     buttons:[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete this to do?'))return;closeModal();mutate('taskEdit',{id,remove:true},()=>{S.tasks=S.tasks.filter(x=>x.id!==id);});}},{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
-      const p={id,text:$('tk-text').value.trim(),assigneeId:$('tk-user').value,date:$('tk-date').value,jobId:$('tk-job').value};
+      const p={id,text:$('tk-text').value.trim(),assigneeId:$('tk-user').value,date:$('tk-date').value,jobId:$('tk-job').value,time:$('tk-time').value};
       if(!p.text||!p.date){toast('A to do needs words and a day.',true);return;}
       closeModal();mutate('taskEdit',p,()=>{Object.assign(t,p);});}}]});
 }
@@ -1019,7 +1326,7 @@ function renderReports(){
   let h='<div class="section-title">Reports</div><div class="no-print"><div class="toolbar" style="justify-content:flex-start"><div class="seg">'+[['this','This week'],['last','Last week'],['month','This month'],['30','Last 30 days']].map(p=>'<button onclick="setRange(\''+p[0]+'\')">'+p[1]+'</button>').join('')+'</div>'+
     '<input type="date" class="search-input" style="max-width:160px;flex:none" id="rep-from" value="'+R.from+'" onchange="R.from=this.value"><span class="muted">to</span><input type="date" class="search-input" style="max-width:160px;flex:none" id="rep-to" value="'+R.to+'" onchange="R.to=this.value"><button class="btn btn-primary" onclick="runReport()">Run report</button></div>'+
     '<div class="toolbar" style="justify-content:flex-start"><select class="search-input" style="max-width:190px;flex:none" onchange="R.who=this.value;renderReports()"><option value="">Everyone</option>'+S.users.map(u=>'<option'+(R.who===u.name?' selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select>'+
-    '<select class="search-input" style="max-width:260px;flex:none" onchange="R.job=this.value;renderReports()"><option value="">All houses</option>'+S.jobs.slice().sort(houseSort).map(j=>'<option value="'+j.id+'"'+(R.job===j.id?' selected':'')+'>'+esc(j.address)+'</option>').join('')+'</select>'+
+    '<select class="search-input" style="max-width:260px;flex:none" onchange="R.job=this.value;renderReports()"><option value="">All houses</option>'+listSort(S.jobs).map(j=>'<option value="'+j.id+'"'+(R.job===j.id?' selected':'')+'>'+esc(j.address)+'</option>').join('')+'</select>'+
     '<div class="seg">'+views.map(v=>'<button class="'+(R.view===v[0]?'on':'')+'" onclick="R.view=\''+v[0]+'\';renderReports()">'+v[1]+'</button>').join('')+'</div></div></div>';
   if(R.loading)h+='<div class="empty-state">Loading report...</div>';
   else if(R.error)h+='<div class="empty-state">'+esc(R.error)+'</div>';
@@ -1058,7 +1365,7 @@ setInterval(()=>{if(queue.length&&!flushing)flush();},30000);
   try{S.me=JSON.parse(lsGet('pjt2_me')||'null');}catch(e){S.me=null;}
   try{queue=JSON.parse(lsGet('pjt2_queue')||'[]')||[];}catch(e){queue=[];}
   if(S.token&&S.me){
-    try{const c=JSON.parse(lsGet('pjt2_cache')||'null');if(c){S.jobs=c.jobs||[];S.tasks=c.tasks||[];S.settings=c.settings||S.settings;S.users=c.users||[];S.team=c.team||[];S.photoCounts=c.photoCounts||{};}}catch(e){}
+    try{const c=JSON.parse(lsGet('pjt2_cache')||'null');if(c){S.jobs=c.jobs||[];S.tasks=c.tasks||[];S.contacts=c.contacts||[];S.settings=c.settings||S.settings;S.users=c.users||[];S.team=c.team||[];S.photoCounts=c.photoCounts||{};}}catch(e){}
     render();sync();
   }else showLogin();
 })();
