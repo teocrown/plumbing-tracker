@@ -929,7 +929,7 @@ function renderDetail(){
   const fails=openFails(job);
   if(fails.length)h+='<div class="fail-box">'+fails.map(f=>'<div><b>✕ '+esc(f.label)+' inspection failed '+esc(fmtShort(f.entry.date))+'</b>'+(f.entry.note?': '+esc(f.entry.note):'')+'</div>').join('')+'</div>';
   h+=houseNotesCard(job,own);
-  h+='<div class="action-row">'+(job.status==='complete'?'':'<button class="btn btn-ready" onclick="openReadyModal()">🔔 Ready for Inspection</button>')+'<a class="btn btn-outline" href="'+esc(mapsUrl(job))+'" target="_blank" rel="noopener">📍 Open in Maps</a><button class="btn btn-outline" onclick="pickPhotos()">📷 Add Photos</button><button class="btn btn-outline" onclick="openLogModal()">+ Log Visit</button>'+
+  h+='<div class="action-row">'+(job.status==='complete'?'':'<button class="btn btn-ready" onclick="openReadyModal()">🔔 Ready for Inspection</button>')+'<a class="btn btn-outline" href="'+esc(mapsUrl(job))+'" target="_blank" rel="noopener">📍 Open in Maps</a><button class="btn btn-outline" onclick="openLogModal()">+ Log Visit</button>'+
     (own?'<button class="btn btn-outline" onclick="openJobModal(\''+job.id+'\')">✎ Edit</button><button class="btn '+(job.status==='complete'?'btn-outline':'btn-green')+'" onclick="toggleComplete()">'+(job.status==='complete'?'↩ Reactivate':'✓ Mark Complete')+'</button>'+(job.status==='complete'?'<button class="btn btn-outline" onclick="openForWarranty()">🛠 Open for warranty</button>':''):'')+'</div>';
   // project number and city inspection
   const iu=inspUrlFor(job);
@@ -943,15 +943,12 @@ function renderDetail(){
   h+='<div class="full-card"><div class="full-card-title">📞 Builder contact'+(own?'<button class="btn btn-outline btn-sm" onclick="openJobModal(\''+job.id+'\')">Change</button>':'')+'</div>'+
     (cons.map(c=>contactRow(c,false)).join('')||'<div class="muted" style="padding:2px 0">'+(own?'No contact for this house yet. Add one in the Phone Book with the same builder and neighborhood as this house, or tap Change to pick one.':'No contact saved for this house yet.')+'</div>')+'</div>';
   h+=workDateBar();
-  const warr=job.status==='warranty'||job.status==='complete';
-  if(warr)h+=ticketsCard(job);
   // checklist
   const p=checklistProgress(job);
   if(own||(job.checklist||[]).length)h+='<div class="full-card"><div class="full-card-title">✅ To do list '+(p.total?'<span>'+p.done+' of '+p.total+' done</span>':'')+'</div>'+
     ((job.checklist||[]).map(it=>checklistRow(job,it,false)).join('')||'<div class="muted" style="padding:6px 0">Nothing on the list for this house. Add your own to dos below.</div>')+
     (own?'<div class="add-row"><input class="form-input" id="new-item-text" placeholder="Add a to do for this house..." onkeydown="if(event.key===\'Enter\')addItem()"><button class="btn btn-primary" onclick="addItem()">Add</button><button class="btn btn-outline" onclick="openItemModal(\''+job.id+'\')">Add with details</button></div>':
       '<div class="form-hint" style="margin-top:8px">Check off anything you finished, even if it was not assigned to you. If you could not finish something, tap Couldn\'t finish and say why.</div>')+'</div>';
-  if(!warr)h+=ticketsCard(job);
   // inspections
   h+='<div class="full-card"><div class="full-card-title">🔍 Inspections'+(own?'':'<span>Entered by the office</span>')+'</div><table class="insp-table"><tbody>'+INSP_KEYS.map((k,i)=>{
     const entries=(job.inspLog||[]).filter(e=>e.key===k).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
@@ -966,22 +963,11 @@ function renderDetail(){
   }).join('')+'</tbody></table></div>';
   // notes from the crew
   h+=crewNotesCard(job,own);
-  // photos
-  h+='<div class="full-card"><div class="full-card-title">📷 Photos <button class="btn btn-primary btn-sm" onclick="pickPhotos()">+ Add Photos</button></div><div class="add-row" style="margin:0 0 10px"><select class="form-select" id="photo-phase" style="max-width:220px"><option value="">Phase (optional)</option>'+PHASES.slice(0,5).map(x=>'<option>'+x+'</option>').join('')+'</select></div><div id="upload-list"></div><div id="photo-area"></div></div>';
   // plans
   h+=plansCard(job,own);
-  // links pasted before plan uploads existed
-  if(DOC_KEYS.some(k=>safeUrl((job.docs||{})[k])))h+='<div class="full-card"><div class="full-card-title">🔗 Saved links'+(own?'<span style="font-weight:400;text-transform:none">From before uploads</span>':'')+'</div><div class="doc-slots-grid">'+DOC_KEYS.map((k,i)=>{
-    const url=safeUrl((job.docs||{})[k]);if(!url)return '';
-    return '<div class="doc-tile has-link"><div class="doc-tile-icon">'+DOC_ICONS[i]+'</div><div class="doc-tile-label">'+DOC_LABELS[i]+'</div><div class="doc-tile-btns"><a class="btn btn-primary btn-sm" href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>'+(own?'<button class="btn btn-outline btn-sm" onclick="clearDoc(\''+k+'\')">Remove</button>':'')+'</div></div>';
-  }).join('')+'</div></div>';
-  // work log
-  h+='<div class="full-card"><div class="full-card-title">👷 Work log <button class="btn btn-outline btn-sm" onclick="openLogModal()">+ Log Visit</button></div>'+(((job.log||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)).map(l=>'<div class="log-entry"><div class="log-avatar">'+esc(getInitials(l.worker))+'</div><div class="log-info"><div class="log-worker">'+esc(l.worker)+'</div><div class="log-detail">'+esc(l.phase||'')+'</div>'+(l.notes?'<div class="log-notes">'+esc(l.notes)+'</div>':'')+'</div><div class="log-date">'+esc(fmtDate(l.date))+(own&&l.ts&&tsDate(l.ts)!==l.date?'<br>entered '+esc(fmtShort(tsDate(l.ts))):'')+(own||l.workerId===S.me.id?'<br><a href="#" onclick="delLog(\''+l.id+'\');return false" style="color:var(--ink-faint)">remove</a>':'')+'</div></div>').join('')||'<div class="muted">No visits logged yet</div>')+'</div>';
-  // info
-  h+='<div class="full-card"><div class="full-card-title">House info</div><div style="font-size:14px;line-height:1.7"><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span>'+(job.completedDate?' <span class="muted">completed '+esc(fmtDate(job.completedDate))+'</span>':'')+
-    (job.builder?'<div><span class="muted">Builder</span> '+esc(job.builder)+'</div>':'')+(job.subdivision?'<div><span class="muted">Neighborhood</span> '+esc(job.subdivision)+'</div>':'')+(job.lot?'<div><span class="muted">Lot</span> '+esc(job.lot)+'</div>':'')+
-    '<div style="margin-top:6px">'+(job.pin?'<span class="muted">📍 Map pin saved for this house.</span> '+(own?'<a href="#" onclick="setPin(\'\');return false">remove pin</a>':''):'<button class="btn btn-outline btn-sm" onclick="dropPin()">📍 Street not in Maps? Save a pin from where I am standing</button>')+'</div></div></div>';
-  if(own)h+='<div class="del-house"><button class="btn btn-sm del-house-btn" onclick="deleteHouse()">🗑 Delete house</button><span class="muted">Only for a house added by mistake.</span></div>';
+  // service and warranty at the bottom
+  h+=ticketsCard(job);
+  if(S.me&&S.me.id==='u_brenda')h+='<div class="del-house"><button class="btn btn-sm del-house-btn" onclick="deleteHouse()">🗑 Delete house</button><span class="muted">Only for a house added by mistake.</span></div>';
   const keep={};['new-item-text','new-ticket-text','photo-phase','note-text'].forEach(id=>{const el=$(id);if(el)keep[id]=el.value;});
   $('detail-body').innerHTML=h;
   Object.keys(keep).forEach(id=>{const el=$(id);if(el&&keep[id]!=null)el.value=keep[id];});
@@ -1061,7 +1047,7 @@ let notePhotos=[],notePhotoTarget='';
 function notePhotoList(noteId){return (photoCache[currentJobId]||[]).filter(p=>p.phase==='note:'+noteId);}
 function crewNotesCard(job,own){
   const notes=(job.crewNotes||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(String(a.ts||a.id)<String(b.ts||b.id)?1:-1));
-  let h='<div class="full-card"><div class="full-card-title">💬 Crew notes <span>Everyone on the team sees these</span></div>';
+  let h='<div class="full-card"><div class="full-card-title">Crew notes</div>';
   h+='<div class="note-add"><textarea class="form-textarea" id="note-text" rows="2" placeholder="Example: shower head missing in the master bath"></textarea>'+
     '<div class="note-add-btns"><button class="btn btn-outline btn-sm" onclick="pickNotePhotos(\'new\')">📷 Add photos</button><span class="muted" id="note-photo-count">'+(notePhotoTarget==='new'&&notePhotos.length?notePhotos.length+' photo'+(notePhotos.length===1?'':'s')+' added':'')+'</span><button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="addCrewNote()">Save note</button></div></div>';
   h+=notes.map(n=>{
@@ -1254,7 +1240,7 @@ function toggleComplete(){
   else{if(!confirm('Mark "'+job.address+'" complete? It moves to the Completed tab and its history is kept.'))return;jobOp('status',{status:'complete',date:todayStr()});}
 }
 function deleteHouse(){
-  const job=getJob(currentJobId);if(!job)return;
+  const job=getJob(currentJobId);if(!job||!S.me||S.me.id!=='u_brenda')return;
   openModal({title:'Delete this house?',body:'<p style="font-size:15px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
     '<p style="font-size:14px;margin-bottom:10px">This is for a house added by mistake. It comes off the tracker for everyone, with its to dos, inspections, and notes. This cannot be undone.</p>'+
     '<p class="muted" style="margin-bottom:10px">If the house is just finished, use Mark complete instead so its history is kept.</p>'+
