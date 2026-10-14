@@ -197,6 +197,27 @@
   .plan-note{background:var(--gold-pale);color:var(--gold-text);border-radius:9px;padding:9px 11px;font-size:13px;}
   .spinner{width:18px;height:18px;border:2px solid var(--copper-light);border-top-color:var(--copper);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
   @keyframes spin{to{transform:rotate(360deg);}}
+  .hnotes{background:var(--gold-pale);border:1px solid #E6D3B0;border-radius:12px;padding:12px 14px;margin-bottom:12px;}
+  .hnotes-title{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--gold-text);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .hnotes-text{font-size:15px;line-height:1.55;color:var(--ink);white-space:pre-wrap;}
+  .crew-line{color:var(--ink-light);}
+  .crew-pick{display:flex;flex-wrap:wrap;gap:6px;}
+  .crew-chip{display:inline-flex;align-items:center;padding:8px 12px;border:1px solid var(--border);border-radius:20px;font-size:14px;cursor:pointer;background:white;user-select:none;}
+  .crew-chip input{display:none;}
+  .crew-chip.on{background:var(--copper-light);border-color:var(--copper);color:var(--copper-text);font-weight:600;}
+  .crew-chip.on::before{content:'✓ ';}
+  .note-add{border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:6px;background:var(--cream);}
+  .note-add .form-textarea{background:white;}
+  .note-add-btns{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;}
+  .note-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .note-row:last-child{border-bottom:none;}
+  .note-main{flex:1;min-width:0;}
+  .note-item{font-size:12px;font-weight:600;color:var(--gold-text);margin-bottom:2px;}
+  .note-text{font-size:14px;white-space:pre-wrap;}
+  .note-who{font-size:11px;color:var(--ink-faint);margin-top:4px;}
+  .note-photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .photo-thumb.sm{width:64px;height:64px;}
+  .cant-btn{font-size:11px;padding:5px 8px;}
   .doc-slots-grid{display:flex;gap:8px;flex-wrap:wrap;}
   .doc-tile{flex:1;min-width:130px;border:1px solid var(--border);border-radius:10px;background:white;padding:10px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;}
   .doc-tile.has-link{border-color:var(--copper-light);background:var(--copper-pale);}
@@ -307,7 +328,7 @@
     <span id="insp-count" class="muted"></span>
   </div>
   <div class="master-table-wrap"><table class="master-table">
-    <thead><tr><th>Address</th><th>Project #</th><th class="insp-cell">Ground</th><th class="insp-cell">Sewer</th><th class="insp-cell">Gas</th><th class="insp-cell">Rough In</th><th class="insp-cell">Shower Pan</th><th class="insp-cell">Temp Gas</th><th class="insp-cell">Final</th><th>Checklist</th></tr></thead>
+    <thead><tr><th>Address</th><th>Project #</th><th class="insp-cell">Ground</th><th class="insp-cell">Sewer</th><th class="insp-cell">Gas</th><th class="insp-cell">Rough In</th><th class="insp-cell">Shower Pan</th><th class="insp-cell">Temp Gas</th><th class="insp-cell">Final</th><th>To dos</th></tr></thead>
     <tbody id="insp-tbody"></tbody>
   </table></div>
   <div class="insp-cards" id="insp-cards"></div>
@@ -360,6 +381,7 @@
   <div class="detail-body" id="detail-body"></div>
 </div>
 <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="photoFilesPicked(this)">
+<input type="file" id="note-photo-input" accept="image/*" multiple style="display:none" onchange="notePhotosPicked(this)">
 <div class="toast" id="toast"></div>
 
 <script>
@@ -671,18 +693,21 @@ function checklistRow(job,it,showHouse){
   if(q>1){
     side='<span class="cl-count">'+d+' of '+q+'</span>'+(mine.length&&d?'<button class="icon-btn" title="Undo one" onclick="uncheckItem(\''+job.id+'\',\''+it.id+'\')">−</button>':'')+(done?'':'<button class="btn btn-sm btn-green" onclick="checkItem(\''+job.id+'\',\''+it.id+'\')">+1</button>');
   }
+  if(!done)side+='<button class="btn btn-sm btn-outline cant-btn" onclick="openCantModal(\''+job.id+'\',\''+it.id+'\')">Couldn\'t finish</button>';
   if(isOwner()&&!showHouse)side+='<button class="icon-btn" title="Edit" onclick="openItemModal(\''+job.id+'\',\''+it.id+'\')">✎</button>';
   let chips='';
   if(it.assignee){const n=it.assignee===S.me.id?'You':userName(it.assignee);chips+='<span class="chip chip-blue">'+esc(n||'Assigned')+(it.due?' · due '+esc(whenText(it.due,it.time)):it.time?' · '+esc(fmtTime(it.time)):'')+'</span>';}
   else if(it.due||it.time)chips+='<span class="chip chip-grey">'+(it.due?'due ':'')+esc(whenText(it.due,it.time))+'</span>';
   if(it.due&&!done&&it.due<todayStr())chips+='<span class="chip chip-red">past due</span>';
+  const bn=!done&&it.blocked?(job.crewNotes||[]).find(n=>n.id===it.blocked):null;
+  if(bn)chips+='<span class="chip chip-amber">⚠ Couldn\'t finish ('+esc(bn.byName)+', '+esc(fmtShort(bn.date))+'): '+esc(bn.text)+'</span>';
   const house=showHouse?'<span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span>':'';
   return '<div class="cl-row'+(done?' done':'')+'">'+box+'<div class="cl-main"><div class="cl-text">'+esc(it.text)+'</div><div class="cl-sub">'+house+chips+(who?'<span>'+who+'</span>':'')+'</div></div><div class="cl-side">'+side+'</div></div>';
 }
 function checkItem(jobId,itemId){
   const job=getJob(jobId);const it=job&&job.checklist.find(x=>x.id===itemId);if(!it)return;
   const entryId=genId('e_'),date=wd();
-  mutate('jobOp',{jobId,op:'check',args:{itemId,entryId,n:1,date}},()=>{it.entries.push({id:entryId,by:S.me.id,byName:S.me.name,date,n:1});});
+  mutate('jobOp',{jobId,op:'check',args:{itemId,entryId,n:1,date}},()=>{it.entries.push({id:entryId,by:S.me.id,byName:S.me.name,date,n:1});it.blocked='';});
 }
 function uncheckItem(jobId,itemId){
   const job=getJob(jobId);const it=job&&job.checklist.find(x=>x.id===itemId);if(!it)return;
@@ -789,12 +814,13 @@ function openSetModal(jobId,reqId,key){
   if(r&&r.setDate)buttons.push({label:'Not set yet',cls:'btn-outline',fn:()=>{closeModal();mutate('jobOp',{jobId,op:'inspSet',args:{reqId:r.id,key,clear:true}},()=>{r.setDate='';});}});
   buttons.push({label:'Save',cls:'btn-primary',fn:()=>{
     const date=$('set-date').value;if(!date){toast('Pick the day.',true);return;}
-    const id=r?r.id:genId('q_');
-    closeModal();mutate('jobOp',{jobId,op:'inspSet',args:{reqId:id,key,date}},()=>{if(r)r.setDate=date;else (job.inspReqs=job.inspReqs||[]).push({id,key,by:S.me.id,byName:S.me.name,date:todayStr(),note:'',setDate:date});});
+    const id=r?r.id:genId('q_');const crew=pickedCrew();
+    closeModal();mutate('jobOp',{jobId,op:'inspSet',args:{reqId:id,key,date,crew}},()=>{setCrewLocal(job,key,crew);if(r)r.setDate=date;else (job.inspReqs=job.inspReqs||[]).push({id,key,by:S.me.id,byName:S.me.name,date:todayStr(),note:'',setDate:date});});
   }});
   openModal({title:inspLabel(key)+' inspection: set the date',body:
     '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
     '<div class="form-group"><label class="form-label">Day the inspection is set for</label><input class="form-input" id="set-date" type="date" value="'+def+'"></div>'+
+    crewPicker(job,key)+
     '<div class="form-hint">It moves to "Set, waiting on results" until you mark it Passed or Failed.</div>',buttons});
 }
 function delReq(jobId,reqId){
@@ -842,15 +868,18 @@ function renderInspections(){
 // ---------- House cards
 function setJobFilter(f){jobFilter=f;setSeg('job-filter',['all','active','pending','warranty'].indexOf(f));renderJobs();}
 function lastWorkDate(job){let d='';(job.log||[]).forEach(l=>{if(l.date>d)d=l.date;});(job.checklist||[]).forEach(it=>(it.entries||[]).forEach(e=>{if(!e.prior&&e.date>d)d=e.date;}));return d;}
+function newNotes(job){if(!isOwner())return 0;const seen=lsGet('pjt_seen_'+job.id)||'';return (job.crewNotes||[]).filter(n=>n.by!==S.me.id&&String(n.ts||'')>seen).length;}
 function jobCard(job){
-  const p=checklistProgress(job);const pct=p.total?Math.round(p.done/p.total*100):0;
-  const fails=openFails(job);const passed=INSP_KEYS.filter(k=>job.inspections&&job.inspections[k]).length;
+  const p=checklistProgress(job);
+  const fails=openFails(job);const passed=INSP_KEYS.filter(k=>job.inspections&&job.inspections[k]).length;const pct=Math.round(passed/7*100);
+  const nn=newNotes(job);
   const last=lastWorkDate(job);const pc=S.photoCounts[job.id]||0;
   return '<div class="job-card'+(fails.length?' has-fail':'')+'" onclick="openDetail(\''+job.id+'\')"><div class="job-card-header"><div><div class="job-address">'+esc(job.address)+'</div><div class="job-lot">'+esc([cityFull(job.city),job.zip].filter(Boolean).join(' ')||'')+(job.permit?' · #'+esc(job.permit):'')+'</div></div><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span></div>'+
     '<div class="job-card-body">'+fails.map(f=>'<span class="chip chip-red" style="margin:0 4px 6px 0">✕ '+esc(f.label)+' failed</span>').join('')+
     (job.inspReqs||[]).map(r=>r.setDate?'<span class="chip chip-blue" style="margin:0 4px 6px 0">'+esc(inspLabel(r.key))+' set '+esc(fmtShort(r.setDate))+'</span>':'<span class="chip chip-amber" style="margin:0 4px 6px 0">🔔 '+esc(inspLabel(r.key))+' ready</span>').join('')+
     (openTickets(job).length?'<span class="chip chip-grey" style="margin:0 4px 6px 0">🛠 '+openTickets(job).length+' warranty open</span>':'')+
-    '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div><div class="muted" style="margin-top:4px">Checklist '+p.done+' of '+p.total+' · Inspections '+passed+' of 7</div></div>'+
+    (nn?'<span class="chip chip-amber" style="margin:0 4px 6px 0">💬 '+nn+' new note'+(nn===1?'':'s')+'</span>':'')+
+    '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div><div class="muted" style="margin-top:4px">Inspections '+passed+' of 7'+(p.total?' · To dos '+p.done+' of '+p.total:'')+'</div></div>'+
     '<div class="job-card-footer"><span>'+(last?'Last work '+esc(fmtShort(last)):'No work logged yet')+'</span><span>'+(pc?'📷 '+pc:'')+'</span></div></div>';
 }
 function houseSort(a,b){
@@ -886,7 +915,7 @@ function renderCompleted(){
 }
 
 // ---------- House detail
-function openDetail(id){currentJobId=id;workDate='';renderDetail();const v=$('detail-view');v.classList.add('open');v.scrollTop=0;loadPhotos(id);}
+function openDetail(id){currentJobId=id;workDate='';if(isOwner())lsSet('pjt_seen_'+id,new Date().toISOString());renderDetail();const v=$('detail-view');v.classList.add('open');v.scrollTop=0;loadPhotos(id);}
 function closeDetail(){$('detail-view').classList.remove('open');currentJobId=null;workDate='';render();}
 function renderDetail(){
   const job=getJob(currentJobId);if(!job){$('detail-view').classList.remove('open');currentJobId=null;return;}
@@ -896,6 +925,7 @@ function renderDetail(){
   let h='';
   const fails=openFails(job);
   if(fails.length)h+='<div class="fail-box">'+fails.map(f=>'<div><b>✕ '+esc(f.label)+' inspection failed '+esc(fmtShort(f.entry.date))+'</b>'+(f.entry.note?': '+esc(f.entry.note):'')+'</div>').join('')+'</div>';
+  h+=houseNotesCard(job,own);
   h+='<div class="action-row">'+(job.status==='complete'?'':'<button class="btn btn-ready" onclick="openReadyModal()">🔔 Ready for Inspection</button>')+'<a class="btn btn-outline" href="'+esc(mapsUrl(job))+'" target="_blank" rel="noopener">📍 Open in Maps</a><button class="btn btn-outline" onclick="pickPhotos()">📷 Add Photos</button><button class="btn btn-outline" onclick="openLogModal()">+ Log Visit</button>'+
     (own?'<button class="btn btn-outline" onclick="openJobModal(\''+job.id+'\')">✎ Edit</button><button class="btn '+(job.status==='complete'?'btn-outline':'btn-green')+'" onclick="toggleComplete()">'+(job.status==='complete'?'↩ Reactivate':'✓ Mark Complete')+'</button>'+(job.status==='complete'?'<button class="btn btn-outline" onclick="openForWarranty()">🛠 Open for warranty</button>':''):'')+'</div>';
   // project number and city inspection
@@ -914,11 +944,10 @@ function renderDetail(){
   if(warr)h+=ticketsCard(job);
   // checklist
   const p=checklistProgress(job);
-  if(!(job.status==='warranty'&&!(job.checklist||[]).length&&!own))h+='<div class="full-card"><div class="full-card-title">✅ House checklist <span>'+p.done+' of '+p.total+' done</span></div>'+
-    ((job.checklist||[]).map(it=>checklistRow(job,it,false)).join('')||'<div class="muted" style="padding:6px 0">No checklist items yet.</div>');
-  if(own)h+='<div class="add-row"><input class="form-input" id="new-item-text" placeholder="Add a to do for this house..." onkeydown="if(event.key===\'Enter\')addItem()"><button class="btn btn-primary" onclick="addItem()">Add</button><button class="btn btn-outline" onclick="openItemModal(\''+job.id+'\')">Add with details</button>'+((job.checklist||[]).length?'':'<button class="btn btn-outline" onclick="addStarter()">Add starter list</button>')+'</div>';
-  else if(!(job.status==='warranty'&&!(job.checklist||[]).length))h+='<div class="form-hint" style="margin-top:8px">Check off anything you finished, even if it was not assigned to you.</div>';
-  if(!(job.status==='warranty'&&!(job.checklist||[]).length&&!own))h+='</div>';
+  if(own||(job.checklist||[]).length)h+='<div class="full-card"><div class="full-card-title">✅ To do list '+(p.total?'<span>'+p.done+' of '+p.total+' done</span>':'')+'</div>'+
+    ((job.checklist||[]).map(it=>checklistRow(job,it,false)).join('')||'<div class="muted" style="padding:6px 0">Nothing on the list for this house. Add your own to dos below.</div>')+
+    (own?'<div class="add-row"><input class="form-input" id="new-item-text" placeholder="Add a to do for this house..." onkeydown="if(event.key===\'Enter\')addItem()"><button class="btn btn-primary" onclick="addItem()">Add</button><button class="btn btn-outline" onclick="openItemModal(\''+job.id+'\')">Add with details</button></div>':
+      '<div class="form-hint" style="margin-top:8px">Check off anything you finished, even if it was not assigned to you. If you could not finish something, tap Couldn\'t finish and say why.</div>')+'</div>';
   if(!warr)h+=ticketsCard(job);
   // inspections
   h+='<div class="full-card"><div class="full-card-title">🔍 Inspections'+(own?'':'<span>Entered by the office</span>')+'</div><table class="insp-table"><tbody>'+INSP_KEYS.map((k,i)=>{
@@ -928,10 +957,12 @@ function renderDetail(){
     const rqLine=!rq?'':rq.setDate?'<div class="insp-hist"><span class="chip chip-blue">Set for '+esc(fmtDay(rq.setDate))+' · waiting on result</span></div>':'<div class="insp-hist"><span class="chip chip-amber">🔔 Ready · asked by '+esc(rq.byName||'')+', '+esc(fmtShort(rq.date))+'</span>'+(rq.note?' '+esc(rq.note):'')+(!own&&rq.by===S.me.id?' <a href="#" onclick="delReq(\''+job.id+'\',\''+rq.id+'\');return false" style="color:var(--ink-faint)">cancel</a>':'')+'</div>';
     const status=!l?'<span class="muted">Not yet</span>':l.result==='fail'?'<span class="insp-fail">✕ FAILED '+esc(fmtDate(l.date))+'</span>':'<span class="insp-pass">✓ Passed '+esc(fmtDate(l.date))+'</span>';
     const hist=entries.length>1||(l&&(l.result==='fail'||l.note))?entries.map(e=>'<div class="insp-hist"><span class="'+(e.result==='fail'?'f':'')+'">'+(e.result==='fail'?'✕ Failed ':'✓ Passed ')+esc(fmtShort(e.date))+'</span>'+(e.note?': '+esc(e.note):'')+(e.byName?' <span class="muted">('+esc(e.byName)+(own&&e.ts&&tsDate(e.ts)!==e.date?', entered '+esc(fmtShort(tsDate(e.ts))):'')+')</span>':'')+(own?' <a href="#" onclick="delInsp(\''+e.id+'\');return false" style="color:var(--ink-faint)">remove</a>':'')+'</div>').join(''):(own&&l?'<div class="insp-hist"><a href="#" onclick="delInsp(\''+l.id+'\');return false" style="color:var(--ink-faint)">remove</a></div>':'');
-    return '<tr><td class="insp-type">'+INSP_LABELS[i]+'</td><td>'+status+rqLine+hist+'</td>'+(own?'<td style="text-align:right"><div class="q-btns" style="justify-content:flex-end"><button class="btn btn-sm btn-outline" onclick="openSetModal(\''+job.id+'\',\''+(rq?rq.id:'')+'\',\''+k+'\')">'+(rq&&rq.setDate?'Change date':'Set date')+'</button><button class="btn btn-sm btn-green" onclick="openInspModal(\''+k+'\',\'pass\')">Passed</button><button class="btn btn-sm btn-red" onclick="openInspModal(\''+k+'\',\'fail\')">Failed</button></div></td>':'')+'</tr>';
+    const crew=(job.crew||{})[k]||[];
+    const crewLine=crew.length||own&&(l||rq)?'<div class="insp-hist crew-line">'+(crew.length?'👷 Worked on it: '+esc(crew.map(c=>c.name).join(', ')):'<span class="muted">No crew picked</span>')+(own&&(l||rq||crew.length)?' <a href="#" onclick="openCrewModal(\''+job.id+'\',\''+k+'\');return false">'+(crew.length?'change':'add who worked on it')+'</a>':'')+'</div>':'';
+    return '<tr><td class="insp-type">'+INSP_LABELS[i]+'</td><td>'+status+rqLine+crewLine+hist+'</td>'+(own?'<td style="text-align:right"><div class="q-btns" style="justify-content:flex-end"><button class="btn btn-sm btn-outline" onclick="openSetModal(\''+job.id+'\',\''+(rq?rq.id:'')+'\',\''+k+'\')">'+(rq&&rq.setDate?'Change date':'Set date')+'</button><button class="btn btn-sm btn-green" onclick="openInspModal(\''+k+'\',\'pass\')">Passed</button><button class="btn btn-sm btn-red" onclick="openInspModal(\''+k+'\',\'fail\')">Failed</button></div></td>':'')+'</tr>';
   }).join('')+'</tbody></table></div>';
-  // phases
-  h+='<div class="full-card"><div class="full-card-title">Phase progress</div>'+job.phases.map((ph,i)=>'<div class="phase-row '+(ph.status==='done'?'done':ph.status==='inprogress'?'inprogress':'')+'"><span class="phase-name">'+esc(ph.name)+'</span>'+(ph.date?'<span class="phase-date">'+esc(fmtShort(ph.date))+(ph.by?' · '+esc(ph.by):'')+'</span>':'')+'<select class="phase-status-select" onchange="setPhase('+i+',this.value)"><option value="pending"'+(ph.status==='pending'?' selected':'')+'>Pending</option><option value="inprogress"'+(ph.status==='inprogress'?' selected':'')+'>In progress</option><option value="done"'+(ph.status==='done'?' selected':'')+'>Done</option></select></div>').join('')+'</div>';
+  // notes from the crew
+  h+=crewNotesCard(job,own);
   // photos
   h+='<div class="full-card"><div class="full-card-title">📷 Photos <button class="btn btn-primary btn-sm" onclick="pickPhotos()">+ Add Photos</button></div><div class="add-row" style="margin:0 0 10px"><select class="form-select" id="photo-phase" style="max-width:220px"><option value="">Phase (optional)</option>'+PHASES.slice(0,5).map(x=>'<option>'+x+'</option>').join('')+'</select></div><div id="upload-list"></div><div id="photo-area"></div></div>';
   // plans
@@ -941,16 +972,13 @@ function renderDetail(){
     const url=safeUrl((job.docs||{})[k]);if(!url)return '';
     return '<div class="doc-tile has-link"><div class="doc-tile-icon">'+DOC_ICONS[i]+'</div><div class="doc-tile-label">'+DOC_LABELS[i]+'</div><div class="doc-tile-btns"><a class="btn btn-primary btn-sm" href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>'+(own?'<button class="btn btn-outline btn-sm" onclick="clearDoc(\''+k+'\')">Remove</button>':'')+'</div></div>';
   }).join('')+'</div></div>';
-  // fixtures
-  h+='<div class="full-card"><div class="full-card-title">🔧 Fixtures installed</div>'+((job.fixtures||[]).map(f=>'<div class="fixture-row"><span class="fixture-name">'+esc(f.name)+'</span><span class="muted">'+esc(f.phase||'')+(f.byName?' · '+esc(f.byName):'')+(f.date?' · '+esc(fmtShort(f.date)):'')+'</span>'+(own||f.by===S.me.id?'<button class="icon-btn" onclick="delFixture(\''+f.id+'\')">✕</button>':'')+'</div>').join('')||'<div class="muted">No fixtures added yet</div>')+
-    '<div class="add-row"><input class="form-input" id="fixture-name" placeholder="Fixture name..." onkeydown="if(event.key===\'Enter\')addFixture()"><select class="form-select" id="fixture-phase" style="max-width:130px"><option>Ground</option><option>Rough-in</option><option>Top out</option><option>Trim</option><option>Final</option></select><button class="btn btn-outline" onclick="addFixture()">Add</button></div></div>';
   // work log
   h+='<div class="full-card"><div class="full-card-title">👷 Work log <button class="btn btn-outline btn-sm" onclick="openLogModal()">+ Log Visit</button></div>'+(((job.log||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0)).map(l=>'<div class="log-entry"><div class="log-avatar">'+esc(getInitials(l.worker))+'</div><div class="log-info"><div class="log-worker">'+esc(l.worker)+'</div><div class="log-detail">'+esc(l.phase||'')+'</div>'+(l.notes?'<div class="log-notes">'+esc(l.notes)+'</div>':'')+'</div><div class="log-date">'+esc(fmtDate(l.date))+(own&&l.ts&&tsDate(l.ts)!==l.date?'<br>entered '+esc(fmtShort(tsDate(l.ts))):'')+(own||l.workerId===S.me.id?'<br><a href="#" onclick="delLog(\''+l.id+'\');return false" style="color:var(--ink-faint)">remove</a>':'')+'</div></div>').join('')||'<div class="muted">No visits logged yet</div>')+'</div>';
   // info
   h+='<div class="full-card"><div class="full-card-title">House info</div><div style="font-size:14px;line-height:1.7"><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span>'+(job.completedDate?' <span class="muted">completed '+esc(fmtDate(job.completedDate))+'</span>':'')+
-    (job.builder?'<div><span class="muted">Builder</span> '+esc(job.builder)+'</div>':'')+(job.subdivision?'<div><span class="muted">Neighborhood</span> '+esc(job.subdivision)+'</div>':'')+(job.lot?'<div><span class="muted">Lot</span> '+esc(job.lot)+'</div>':'')+(job.notes?'<div><span class="muted">Notes</span> '+esc(job.notes)+'</div>':'')+
+    (job.builder?'<div><span class="muted">Builder</span> '+esc(job.builder)+'</div>':'')+(job.subdivision?'<div><span class="muted">Neighborhood</span> '+esc(job.subdivision)+'</div>':'')+(job.lot?'<div><span class="muted">Lot</span> '+esc(job.lot)+'</div>':'')+
     '<div style="margin-top:6px">'+(job.pin?'<span class="muted">📍 Map pin saved for this house.</span> '+(own?'<a href="#" onclick="setPin(\'\');return false">remove pin</a>':''):'<button class="btn btn-outline btn-sm" onclick="dropPin()">📍 Street not in Maps? Save a pin from where I am standing</button>')+'</div></div></div>';
-  const keep={};['new-item-text','new-ticket-text','fixture-name','photo-phase','fixture-phase'].forEach(id=>{const el=$(id);if(el)keep[id]=el.value;});
+  const keep={};['new-item-text','new-ticket-text','photo-phase','note-text'].forEach(id=>{const el=$(id);if(el)keep[id]=el.value;});
   $('detail-body').innerHTML=h;
   Object.keys(keep).forEach(id=>{const el=$(id);if(el&&keep[id]!=null)el.value=keep[id];});
   renderUploads();renderPhotos();
@@ -986,15 +1014,107 @@ function openInspModal(key,result,jobId){
     '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
     '<div class="form-group"><label class="form-label">Date of the inspection</label><input class="form-input" id="insp-date" type="date" max="'+todayStr()+'" value="'+def+'"></div>'+
     '<div class="form-group"><label class="form-label">'+(result==='fail'?'Why did it fail?':'Note (optional)')+'</label><textarea class="form-textarea" id="insp-note" '+(result==='fail'?'data-focus ':'')+'placeholder="'+(result==='fail'?'Example: missing nail plates in the upstairs bath':'')+'"></textarea></div>'+
+    crewPicker(job,key)+
     (result==='fail'?'<div class="form-hint">The house shows in red until a passed inspection is entered. The failure stays in the history.</div>':''),
     buttons:[{label:'Cancel',fn:closeModal},{label:result==='fail'?'Save as Failed':'Save as Passed',cls:result==='fail'?'btn-red':'btn-green',fn:()=>{
       const date=$('insp-date').value,note=$('insp-note').value.trim();
       if(!date){toast('Pick the date.',true);return;}
       if(result==='fail'&&!note){toast('Add a note saying why it failed.',true);return;}
-      closeModal();mutate('jobOp',{jobId,op:'insp',args:{entryId:genId('i_'),key,result,date,note}},()=>{job.inspReqs=(job.inspReqs||[]).filter(x=>x.key!==key);});}}]});
+      const crew=pickedCrew();
+      closeModal();mutate('jobOp',{jobId,op:'insp',args:{entryId:genId('i_'),key,result,date,note,crew}},()=>{job.inspReqs=(job.inspReqs||[]).filter(x=>x.key!==key);setCrewLocal(job,key,crew);});}}]});
 }
 function delInsp(entryId){if(!confirm('Remove this inspection entry?'))return;jobOp('inspDel',{entryId});}
 function setPhase(idx,status){jobOp('phase',{idx,status,date:wd()});}
+// ---------- House notes (top of the house page, everyone reads them, owners edit)
+function houseNotesCard(job,own){
+  if(!job.notes&&!own)return '';
+  return '<div class="hnotes"><div class="hnotes-title">📌 House notes'+(own?'<button class="btn btn-outline btn-sm" onclick="openHouseNotes()">'+(job.notes?'Edit':'+ Add notes')+'</button>':'')+'</div>'+
+    (job.notes?'<div class="hnotes-text">'+esc(job.notes)+'</div>':'<div class="muted">Gate code, lockbox, who provides the fixtures, anything the crew should know.</div>')+'</div>';
+}
+function openHouseNotes(){
+  const job=getJob(currentJobId);if(!job)return;
+  openModal({title:'House notes',body:'<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p><div class="form-group"><textarea class="form-textarea" id="hn-text" data-focus rows="6" maxlength="1000" placeholder="Gate code 4512#&#10;Builder provides plumbing fixtures">'+esc(job.notes||'')+'</textarea><div class="form-hint">Everyone on the team can read these. Only Brenda and Teodoro can change them.</div></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{const notes=$('hn-text').value.trim();closeModal();jobOp('houseNotes',{notes},()=>{job.notes=notes;});}}]});
+}
+
+// ---------- Who worked on it (picked when an inspection is set, passed or failed)
+function crewPicker(job,key){
+  const cur=((job.crew||{})[key]||[]).map(c=>c.id);
+  const people=activeUsers();
+  if(!people.length)return '';
+  return '<div class="form-group"><label class="form-label">Who worked on this phase?</label><div class="crew-pick">'+people.map(u=>'<label class="crew-chip'+(cur.includes(u.id)?' on':'')+'"><input type="checkbox" value="'+esc(u.id)+'"'+(cur.includes(u.id)?' checked':'')+' onchange="this.parentNode.classList.toggle(\'on\',this.checked)">'+esc(u.name)+'</label>').join('')+'</div><div class="form-hint">They go on the work log and the reports for you.</div></div>';
+}
+function pickedCrew(){return [...document.querySelectorAll('.crew-pick input:checked')].map(x=>x.value);}
+function setCrewLocal(job,key,ids){job.crew=job.crew||{};job.crew[key]=ids.map(id=>({id,name:userName(id)}));}
+function openCrewModal(jobId,key){
+  const job=getJob(jobId);if(!job)return;
+  openModal({title:inspLabel(key)+': who worked on it',body:'<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+crewPicker(job,key),
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{const crew=pickedCrew();closeModal();mutate('jobOp',{jobId,op:'crew',args:{key,crew}},()=>setCrewLocal(job,key,crew));}}]});
+}
+
+// ---------- Crew notes (anyone can add, everyone sees them, with photos)
+let notePhotos=[],notePhotoTarget='';
+function notePhotoList(noteId){return (photoCache[currentJobId]||[]).filter(p=>p.phase==='note:'+noteId);}
+function crewNotesCard(job,own){
+  const notes=(job.crewNotes||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(String(a.ts||a.id)<String(b.ts||b.id)?1:-1));
+  let h='<div class="full-card"><div class="full-card-title">💬 Crew notes <span>Everyone on the team sees these</span></div>';
+  h+='<div class="note-add"><textarea class="form-textarea" id="note-text" rows="2" placeholder="Example: shower head missing in the master bath"></textarea>'+
+    '<div class="note-add-btns"><button class="btn btn-outline btn-sm" onclick="pickNotePhotos(\'new\')">📷 Add photos</button><span class="muted" id="note-photo-count">'+(notePhotoTarget==='new'&&notePhotos.length?notePhotos.length+' photo'+(notePhotos.length===1?'':'s')+' added':'')+'</span><button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="addCrewNote()">Save note</button></div></div>';
+  h+=notes.map(n=>{
+    const ph=notePhotoList(n.id);
+    return '<div class="note-row"><div class="log-avatar">'+esc(getInitials(n.byName))+'</div><div class="note-main">'+
+      (n.itemText?'<div class="note-item">⚠ Couldn\'t finish: '+esc(n.itemText)+'</div>':'')+
+      '<div class="note-text">'+esc(n.text)+'</div>'+
+      (ph.length?'<div class="note-photos">'+ph.map(p=>'<div class="photo-thumb sm" onclick="viewPhoto(\''+p.id+'\')">'+(p.thumb?'<img alt="" src="data:image/jpeg;base64,'+p.thumb+'">':'')+'</div>').join('')+'</div>':'')+
+      '<div class="note-who">'+esc(n.byName)+' · '+esc(fmtShort(n.date))+((own||n.by===S.me.id)?' · <a href="#" onclick="delCrewNote(\''+n.id+'\');return false">remove</a>':'')+'</div></div></div>';
+  }).join('')||'<div class="muted" style="padding:6px 0">No notes yet.</div>';
+  return h+'</div>';
+}
+function pickNotePhotos(target){if(notePhotoTarget!==target)notePhotos=[];notePhotoTarget=target;const i=$('note-photo-input');i.value='';i.click();}
+function notePhotosPicked(input){
+  notePhotos=notePhotos.concat([...input.files]).slice(0,8);
+  const msg=notePhotos.length?notePhotos.length+' photo'+(notePhotos.length===1?'':'s')+' added':'';
+  const el=$(notePhotoTarget==='new'?'note-photo-count':'cant-photo-count');if(el)el.textContent=msg;
+}
+function sendNotePhotos(jobId,noteId){
+  notePhotos.forEach(file=>uploads.push({id:genId('p_'),jobId,file,name:file.name,phase:'note:'+noteId,date:wd(),state:'waiting'}));
+  notePhotos=[];notePhotoTarget='';
+  renderUploads();runUploads();
+}
+function addCrewNote(){
+  const job=getJob(currentJobId);if(!job)return;
+  const text=$('note-text').value.trim();
+  if(!text){toast('Type the note first.',true);return;}
+  const id=genId('n_'),date=wd();
+  $('note-text').value='';
+  const hasPhotos=notePhotoTarget==='new'&&notePhotos.length;
+  if(!hasPhotos){notePhotos=[];notePhotoTarget='';}
+  mutate('jobOp',{jobId:job.id,op:'noteAdd',args:{id,text,date}},()=>{(job.crewNotes=job.crewNotes||[]).push({id,text,by:S.me.id,byName:S.me.name,date,ts:new Date().toISOString()});});
+  if(hasPhotos)sendNotePhotos(job.id,id);
+  toast('Note saved');
+}
+function delCrewNote(id){
+  const job=getJob(currentJobId);if(!job)return;
+  if(!confirm('Remove this note?'))return;
+  jobOp('noteDel',{id},()=>{job.crewNotes=(job.crewNotes||[]).filter(n=>n.id!==id);(job.checklist||[]).forEach(it=>{if(it.blocked===id)it.blocked='';});});
+}
+function openCantModal(jobId,itemId){
+  const job=getJob(jobId);const it=job&&(job.checklist||[]).find(x=>x.id===itemId);if(!it)return;
+  notePhotos=[];notePhotoTarget='cant';
+  openModal({title:'Couldn\'t finish',body:'<p style="font-size:14px;margin-bottom:4px"><b>'+esc(it.text)+'</b></p><p class="muted" style="margin-bottom:10px">'+esc(job.address)+'</p>'+
+    '<div class="form-group"><label class="form-label">Why couldn\'t it be finished?</label><textarea class="form-textarea" id="cant-text" data-focus rows="3" placeholder="Example: waiting on the framer to move the wall"></textarea></div>'+
+    '<div class="form-group"><button class="btn btn-outline btn-sm" onclick="pickNotePhotos(\'cant\')">📷 Add photos (optional)</button> <span class="muted" id="cant-photo-count"></span></div>'+
+    '<div class="form-hint">Brenda and Teodoro will see this on the house. It stays on the list until someone checks it off.</div>',
+    onClose:()=>{if(notePhotoTarget==='cant'){notePhotos=[];notePhotoTarget='';}},
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Send',cls:'btn-primary',fn:()=>{
+      const text=$('cant-text').value.trim();if(!text){toast('Say why it could not be finished.',true);return;}
+      const id=genId('n_'),date=wd();const files=notePhotos.slice();
+      notePhotoTarget='';closeModal();
+      mutate('jobOp',{jobId,op:'noteAdd',args:{id,text,date,itemId}},()=>{(job.crewNotes=job.crewNotes||[]).push({id,text,by:S.me.id,byName:S.me.name,date,ts:new Date().toISOString(),itemId,itemText:it.text});it.blocked=id;});
+      if(files.length){notePhotos=files;sendNotePhotos(jobId,id);}
+      toast('Sent. Thank you for letting us know.');
+    }}]});
+}
 function clearDoc(key){if(!confirm('Remove this saved link? The file itself stays in Google Drive.'))return;jobOp('docs',{key,url:''});}
 
 // ---------- Plans (PDFs uploaded by the owners, everyone can open them)
@@ -1263,7 +1383,7 @@ function setPin(pin){jobOp('pin',{pin});}
 // ---------- photos
 async function loadPhotos(jobId,force){
   if(photoCache[jobId]&&!force)return;
-  try{const d=await api('photos',{jobId});photoCache[jobId]=d.photos;S.photoCounts[jobId]=d.photos.length;if(currentJobId===jobId)renderPhotos();}
+  try{const d=await api('photos',{jobId});photoCache[jobId]=d.photos;S.photoCounts[jobId]=d.photos.length;if(currentJobId===jobId){renderPhotos();if(d.photos.some(p=>/^note:/.test(p.phase||'')))safeRender2();}}
   catch(e){if(currentJobId===jobId&&!photoCache[jobId]){const a=$('photo-area');if(a)a.innerHTML='<div class="muted">Photos could not load'+(e.code==='offline'?' (no signal)':'')+'. <a href="#" onclick="loadPhotos(\''+jobId+'\',true);return false">Try again</a></div>';}}
 }
 function renderPhotos(){
@@ -1296,10 +1416,11 @@ async function runUploads(){
       if(d.photo){(photoCache[u.jobId]=photoCache[u.jobId]||[]).push(d.photo);S.photoCounts[u.jobId]=(S.photoCounts[u.jobId]||0)+1;}
       else loadPhotos(u.jobId,true);
     }catch(e){u.state='failed';u.error=e.code==='offline'?'No signal':e.message;if(e.code==='auth'){uploading=false;authLost(e.message);return;}}
-    renderUploads();if(currentJobId===u.jobId)renderPhotos();
+    renderUploads();if(currentJobId===u.jobId){renderPhotos();if(/^note:/.test(u.phase||'')&&u.state==='done')safeRender2();}
   }
   uploading=false;
 }
+function safeRender2(){if(currentJobId&&!modalOpen()&&!isTyping())renderDetail();}
 function retryUpload(id){const u=uploads.find(x=>x.id===id);if(u){u.state='waiting';renderUploads();runUploads();}}
 function renderUploads(){
   const el=$('upload-list');if(!el)return;
@@ -1309,7 +1430,7 @@ function renderUploads(){
 }
 async function viewPhoto(id){
   const p=(photoCache[currentJobId]||[]).find(x=>x.id===id);if(!p)return;
-  const meta='<div class="muted" style="margin-top:8px;text-align:center">'+esc(p.userName)+' · '+esc(fmtDate(p.date))+(p.phase?' · '+esc(p.phase):'')+(isOwner()&&p.ts&&tsDate(p.ts)!==p.date?' · uploaded '+esc(fmtShort(tsDate(p.ts))):'')+'</div>';
+  const meta='<div class="muted" style="margin-top:8px;text-align:center">'+esc(p.userName)+' · '+esc(fmtDate(p.date))+(p.phase?' · '+esc(/^note:/.test(p.phase)?'Crew note':p.phase):'')+(isOwner()&&p.ts&&tsDate(p.ts)!==p.date?' · uploaded '+esc(fmtShort(tsDate(p.ts))):'')+'</div>';
   const buttons=[{label:'Close',cls:'btn-primary',fn:closeModal}];
   if(isOwner())buttons.unshift({label:'Delete photo',cls:'btn-red',fn:async()=>{if(!confirm('Delete this photo for everyone? It moves to the Drive trash.'))return;closeModal();try{await api('photoDel',{opId:genId('o_'),id});photoCache[currentJobId]=(photoCache[currentJobId]||[]).filter(x=>x.id!==id);S.photoCounts[currentJobId]=photoCache[currentJobId].length;renderPhotos();toast('Photo deleted');}catch(e){toast(e.message,true);}}});
   openModal({title:'Photo',body:'<div class="viewer" id="viewer">'+(p.thumb?'<img alt="" style="width:100%;filter:blur(2px)" src="data:image/jpeg;base64,'+p.thumb+'">':'<div class="muted">Loading...</div>')+'</div>'+meta+'<div id="viewer-link" style="text-align:center;margin-top:6px"></div>',buttons});
