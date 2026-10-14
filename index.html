@@ -197,6 +197,8 @@
   .plan-note{background:var(--gold-pale);color:var(--gold-text);border-radius:9px;padding:9px 11px;font-size:13px;}
   .spinner{width:18px;height:18px;border:2px solid var(--copper-light);border-top-color:var(--copper);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
   @keyframes spin{to{transform:rotate(360deg);}}
+  .del-house{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 8px;padding-top:14px;border-top:1px dashed var(--border);}
+  .del-house-btn{background:white;border:1px solid var(--red);color:var(--red);}
   .hnotes{background:var(--gold-pale);border:1px solid #E6D3B0;border-radius:12px;padding:12px 14px;margin-bottom:12px;}
   .hnotes-title{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--gold-text);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
   .hnotes-text{font-size:15px;line-height:1.55;color:var(--ink);white-space:pre-wrap;}
@@ -451,6 +453,7 @@ function applyResponse(d){
   if(d.users)S.users=d.users;
   if(d.settings)S.settings=d.settings;
   if(d.setupOpen!=null)S.setupOpen=d.setupOpen;
+  if(d.deleted){S.jobs=S.jobs.filter(j=>j.id!==d.deleted);S.tasks.forEach(t=>{if(t.jobId===d.deleted)t.jobId='';});}
 }
 function saveCache(){lsSet('pjt2_cache',JSON.stringify({jobs:S.jobs,tasks:S.tasks,contacts:S.contacts,settings:S.settings,users:S.users,team:S.team,photoCounts:S.photoCounts}));}
 function saveQueue(){lsSet('pjt2_queue',JSON.stringify(queue));updateQueueBanner();}
@@ -978,6 +981,7 @@ function renderDetail(){
   h+='<div class="full-card"><div class="full-card-title">House info</div><div style="font-size:14px;line-height:1.7"><span class="status-badge status-'+esc(job.status)+'">'+esc(STATUS_LABELS[job.status]||job.status)+'</span>'+(job.completedDate?' <span class="muted">completed '+esc(fmtDate(job.completedDate))+'</span>':'')+
     (job.builder?'<div><span class="muted">Builder</span> '+esc(job.builder)+'</div>':'')+(job.subdivision?'<div><span class="muted">Neighborhood</span> '+esc(job.subdivision)+'</div>':'')+(job.lot?'<div><span class="muted">Lot</span> '+esc(job.lot)+'</div>':'')+
     '<div style="margin-top:6px">'+(job.pin?'<span class="muted">📍 Map pin saved for this house.</span> '+(own?'<a href="#" onclick="setPin(\'\');return false">remove pin</a>':''):'<button class="btn btn-outline btn-sm" onclick="dropPin()">📍 Street not in Maps? Save a pin from where I am standing</button>')+'</div></div></div>';
+  if(own)h+='<div class="del-house"><button class="btn btn-sm del-house-btn" onclick="deleteHouse()">🗑 Delete house</button><span class="muted">Only for a house added by mistake.</span></div>';
   const keep={};['new-item-text','new-ticket-text','photo-phase','note-text'].forEach(id=>{const el=$(id);if(el)keep[id]=el.value;});
   $('detail-body').innerHTML=h;
   Object.keys(keep).forEach(id=>{const el=$(id);if(el&&keep[id]!=null)el.value=keep[id];});
@@ -1248,6 +1252,19 @@ function toggleComplete(){
   const job=getJob(currentJobId);if(!job)return;
   if(job.status==='complete'){if(!confirm('Move "'+job.address+'" back to Active?'))return;jobOp('status',{status:'active'});}
   else{if(!confirm('Mark "'+job.address+'" complete? It moves to the Completed tab and its history is kept.'))return;jobOp('status',{status:'complete',date:todayStr()});}
+}
+function deleteHouse(){
+  const job=getJob(currentJobId);if(!job)return;
+  openModal({title:'Delete this house?',body:'<p style="font-size:15px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
+    '<p style="font-size:14px;margin-bottom:10px">This is for a house added by mistake. It comes off the tracker for everyone, with its to dos, inspections, and notes. This cannot be undone.</p>'+
+    '<p class="muted" style="margin-bottom:10px">If the house is just finished, use Mark complete instead so its history is kept.</p>'+
+    '<div class="form-group"><label class="form-label">Type DELETE to confirm</label><input class="form-input" id="del-confirm" data-focus autocomplete="off"></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Delete house',cls:'btn-red',fn:()=>{
+      if($('del-confirm').value.trim().toUpperCase()!=='DELETE'){toast('Type DELETE to confirm.',true);return;}
+      const id=job.id;closeModal();$('detail-view').classList.remove('open');currentJobId=null;
+      mutate('jobDel',{jobId:id},()=>{S.jobs=S.jobs.filter(j=>j.id!==id);});
+      toast('House deleted');
+    }}]});
 }
 function openForWarranty(){const job=getJob(currentJobId);if(!job)return;if(!confirm('Open "'+job.address+'" for warranty work? It goes back on the Houses list with the Warranty label.'))return;jobOp('status',{status:'warranty'});}
 
