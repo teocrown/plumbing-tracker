@@ -1049,7 +1049,7 @@ function crewNotesCard(job,own){
   const notes=(job.crewNotes||[]).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(String(a.ts||a.id)<String(b.ts||b.id)?1:-1));
   let h='<div class="full-card"><div class="full-card-title">Crew notes</div>';
   h+='<div class="note-add"><textarea class="form-textarea" id="note-text" rows="2" placeholder="Example: shower head missing in the master bath"></textarea>'+
-    '<div class="note-add-btns"><button class="btn btn-outline btn-sm" onclick="pickNotePhotos(\'new\')">📷 Add photos</button><span class="muted" id="note-photo-count">'+(notePhotoTarget==='new'&&notePhotos.length?notePhotos.length+' photo'+(notePhotos.length===1?'':'s')+' added':'')+'</span><button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="addCrewNote()">Save note</button></div></div>';
+    '<div class="note-add-btns"><button class="btn btn-outline btn-sm" onclick="pickNotePhotos(\'new\')">📷 Add photos</button><span class="muted" id="note-photo-count">'+(notePhotoTarget==='new'&&notePhotos.length?notePhotos.length+' photo'+(notePhotos.length===1?'':'s')+' added':'')+'</span><button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="addCrewNote()">Save note</button></div></div><div id="upload-list"></div>';
   h+=notes.map(n=>{
     const ph=notePhotoList(n.id);
     return '<div class="note-row"><div class="log-avatar">'+esc(getInitials(n.byName))+'</div><div class="note-main">'+
@@ -1418,7 +1418,7 @@ async function runUploads(){
       u.state='done';u.data=null;u.file=null;
       if(d.photo){(photoCache[u.jobId]=photoCache[u.jobId]||[]).push(d.photo);S.photoCounts[u.jobId]=(S.photoCounts[u.jobId]||0)+1;}
       else loadPhotos(u.jobId,true);
-    }catch(e){u.state='failed';u.error=e.code==='offline'?'No signal':e.message;if(e.code==='auth'){uploading=false;authLost(e.message);return;}}
+    }catch(e){u.state='failed';u.error=e.code==='offline'?'No signal':(e.message==='bad image'?'This photo type cannot be read. Try a JPG or PNG.':e.message);toast('A photo did not upload: '+u.error,true);if(e.code==='auth'){uploading=false;authLost(e.message);return;}}
     renderUploads();if(currentJobId===u.jobId){renderPhotos();if(/^note:/.test(u.phase||'')&&u.state==='done')safeRender2();}
   }
   uploading=false;
