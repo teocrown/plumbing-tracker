@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Job Tracker">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" href="icon.png">
+<link rel="manifest" href="manifest.json?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="icon" href="icon.png?v=2">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -106,6 +106,24 @@
   .chip-red{background:var(--red-light);color:var(--red);}
   .chip-blue{background:var(--blue-light);color:var(--blue);}
   .chip-amber{background:var(--amber-light);color:var(--gold-text);}
+  .chip-green{background:var(--green-light);color:var(--green);}
+  .svc-card{background:white;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;}
+  .full-card .svc-card{border-color:var(--border);background:var(--cream);}
+  .svc-card.done{opacity:.92;}
+  .svc-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
+  .svc-addr{font-size:15px;margin-bottom:3px;}
+  .svc-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--ink-faint);}
+  .svc-text{font-size:14px;margin:8px 0;white-space:pre-wrap;word-break:break-word;}
+  .svc-chips,.svc-links,.svc-files,.svc-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;}
+  .svc-file{display:inline-flex;gap:4px;align-items:center;max-width:100%;}
+  .svc-file .btn{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .svc-notes{margin-top:8px;border-top:1px dashed var(--border);padding-top:6px;}
+  .svc-note{font-size:13px;padding:3px 0;word-break:break-word;}
+  .svc-done{margin-top:8px;font-size:13px;background:var(--green-light);color:var(--green);border-radius:8px;padding:8px 10px;}
+  .svc-sub{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-faint);font-weight:600;margin:12px 0 6px;}
+  .svc-done-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:14px 0 10px;font:inherit;font-size:14px;color:var(--ink-light);cursor:pointer;}
+  .link-btn{background:none;border:none;padding:0;color:var(--red);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;}
+  .res-row{display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border);}
   .chip-grey{background:var(--cream);color:var(--ink-light);border:1px solid var(--border);}
   .empty-state{text-align:center;padding:44px 20px;color:var(--ink-faint);font-size:14px;}
   .modal-backdrop{position:fixed;inset:0;background:rgba(46,46,46,0.45);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .2s;}
@@ -366,6 +384,8 @@
   <div id="pb-list"></div>
 </div></div></div>
 
+<div class="page" id="page-service"><div class="main"><div class="container" id="service-body"></div></div></div>
+
 <div class="page" id="page-team"><div class="main"><div class="container" id="team-body"></div></div></div>
 <div class="page" id="page-reports"><div class="main"><div class="container" id="reports-body"></div></div></div>
 
@@ -383,6 +403,7 @@
   <div class="detail-body" id="detail-body"></div>
 </div>
 <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="photoFilesPicked(this)">
+<input type="file" id="svc-file-input" accept="image/*,application/pdf" multiple style="display:none" onchange="svcFilesPicked(this)">
 <input type="file" id="note-photo-input" accept="image/*" multiple style="display:none" onchange="notePhotosPicked(this)">
 <div class="toast" id="toast"></div>
 
@@ -588,8 +609,10 @@ function tabsFor(){
   const toSet=isOwner()?allReqs().filter(x=>!x.r.setDate).length:0;
   const failBadge=(toSet?'<span class="tab-count">'+toSet+'</span>':'')+(fails?'<span class="tab-count red">'+fails+'</span>':'');
   const myBadge=mine?'<span class="tab-count">'+mine+'</span>':'';
-  if(isOwner())return [['inspections','📋 Inspections'+failBadge],['jobs','🏠 Houses'],['team','👷 Team & To Dos'],['phonebook','📞 Phone Book'],['reports','📊 Reports'],['completed','✅ Completed'],['mylist','📝 My List'+myBadge]];
-  return [['mylist','📝 My List'+myBadge],['jobs','🏠 Houses'],['inspections','📋 Inspections'+failBadge],['phonebook','📞 Phone Book'],['completed','✅ Completed']];
+  const svcOpen=allSvc().filter(x=>!x.t.done).length;
+  const svcTab=['service','🛠 Service and warranty'+(svcOpen?'<span class="tab-count">'+svcOpen+'</span>':'')];
+  if(isOwner())return [['inspections','📋 Inspections'+failBadge],['jobs','🏠 Houses'],svcTab,['team','👷 Team & To Dos'],['phonebook','📞 Phone Book'],['reports','📊 Reports'],['completed','✅ Completed'],['mylist','📝 My List'+myBadge]];
+  return [['mylist','📝 My List'+myBadge],['jobs','🏠 Houses'],svcTab,['inspections','📋 Inspections'+failBadge],['phonebook','📞 Phone Book'],['completed','✅ Completed']];
 }
 function switchTab(t){tab=t;workDate='';render();window.scrollTo(0,0);}
 function render(){
@@ -613,6 +636,7 @@ function renderPages(){
   if(tab==='jobs')renderJobs();
   if(tab==='completed')renderCompleted();
   if(tab==='phonebook')renderPhoneBook();
+  if(tab==='service')renderService();
   document.querySelectorAll('.grp-toggle').forEach(el=>{el.textContent=showGroups?'Hide builder names':'Show builder names';});
   if(tab==='team')renderTeam();
   if(tab==='reports')renderReports();
@@ -776,14 +800,14 @@ function renderQueue(){
   const pend=reqs.filter(x=>x.r.setDate).sort((a,b)=>a.r.setDate<b.r.setDate?-1:a.r.setDate>b.r.setDate?1:houseSort(a.job,b.job));
   const addr=x=>'<span class="house-link" onclick="openDetail(\''+x.job.id+'\')">'+esc(x.job.address)+'</span>';
   let h='';
-  if(own||toSet.length){
+  {
     h+='<div class="list-card"><div class="list-head">🔔 Ready for inspection, to be set<span>'+toSet.length+'</span></div>';
     h+=toSet.map(x=>'<div class="q-row"><div class="q-main"><div class="q-title">'+addr(x)+' · '+esc(inspLabel(x.r.key))+'</div><div class="q-sub">Asked by '+esc(x.r.byName||'')+', '+esc(fmtDay(x.r.date))+(x.r.note?' · '+esc(x.r.note):'')+'</div></div><div class="q-btns">'+
       (own?'<button class="btn btn-primary" onclick="openSetModal(\''+x.job.id+'\',\''+x.r.id+'\',\''+x.r.key+'\')">Set date</button><button class="icon-btn" title="Take off the list" aria-label="Take off the list" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">✕</button>'
         :x.r.by===S.me.id?'<button class="btn btn-outline" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">Cancel</button>':'<span class="chip chip-amber">waiting to be set</span>')+'</div></div>').join('')||'<div class="muted" style="padding:10px 2px">Nothing waiting to be set.</div>';
     h+='</div>';
   }
-  if(own||pend.length){
+  {
     h+='<div class="list-card"><div class="list-head">⏳ Set, waiting on results<span>'+pend.length+'</span></div>';
     let last=null;
     pend.forEach(x=>{
@@ -798,6 +822,20 @@ function renderQueue(){
     if(!pend.length)h+='<div class="muted" style="padding:10px 2px">No inspections waiting on results.</div>';
     h+='</div>';
   }
+  // Results typed in today stay here for the whole day, even when the inspection date was a day or two before.
+  const res=[];
+  S.jobs.forEach(j=>(j.inspLog||[]).forEach(e=>{if(e.enteredDate===today)res.push({job:j,e});}));
+  res.sort((a,b)=>(a.e.result===b.e.result?houseSort(a.job,b.job):a.e.result==='fail'?-1:1));
+  h+='<div class="list-card"><div class="list-head">📣 Today\'s results<span>'+res.length+'</span></div>';
+  h+=res.map(x=>{
+    const crew=((x.job.crew||{})[x.e.key]||[]).map(c=>c.name).filter(Boolean);
+    const fail=x.e.result==='fail';
+    return '<div class="res-row"><div class="q-main" style="flex:1;min-width:0"><div class="q-title"><span class="house-link" onclick="openDetail(\''+x.job.id+'\')">'+esc(x.job.address)+'</span> · '+esc(inspLabel(x.e.key))+'</div>'+
+      '<div class="q-sub">'+(x.e.date!==today?'Inspection on '+esc(fmtDay(x.e.date))+' · ':'')+(x.e.byName?'Entered by '+esc(x.e.byName):'')+(crew.length?' · Crew: '+esc(crew.join(', ')):'')+'</div>'+
+      (fail&&x.e.note?'<div class="q-sub" style="color:var(--red)">Why: '+esc(x.e.note)+'</div>':(!fail&&x.e.note?'<div class="q-sub">'+esc(x.e.note)+'</div>':''))+
+      '</div><span class="chip '+(fail?'chip-red':'chip-green')+'">'+(fail?'✕ Failed':'✓ Passed')+'</span></div>';
+  }).join('')||'<div class="muted" style="padding:10px 2px">No results entered yet today. Passed and failed inspections show here for the rest of the day you enter them.</div>';
+  h+='</div>';
   $('insp-queue').innerHTML=h;
 }
 function inspCellParts(h,k){
@@ -1254,64 +1292,239 @@ function deleteHouse(){
 }
 function openForWarranty(){const job=getJob(currentJobId);if(!job)return;if(!confirm('Open "'+job.address+'" for warranty work? It goes back on the Houses list with the Warranty label.'))return;jobOp('status',{status:'warranty'});}
 
-// ---------- service and warranty tickets
+// ---------- service and warranty (house page section and the Service and warranty tab show the same calls)
+const SVC_KINDS=[['builder','Builder warranty'],['third','3rd party inspection'],['haustalk','HausTalk']];
+function svcKindLabel(k){const x=SVC_KINDS.find(s=>s[0]===k);return x?x[1]:'Builder warranty';}
+let svcShowDone=false,svcSearch='';
+const svcUploads=[];
 function openTickets(job){return (job.tickets||[]).filter(t=>!t.done);}
-function ticketRow(job,t,showHouse){
-  const own=isOwner(),today=todayStr();
-  const box='<div class="cl-box'+(t.done?' on':'')+'" role="checkbox" aria-checked="'+!!t.done+'" onclick="'+(t.done?'undoTicket':'openTicketDone')+'(\''+job.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>';
-  let chips=showHouse?'<span class="chip chip-grey">🛠 warranty</span>':'';
+function getTicket(jobId,ticketId){const job=getJob(jobId);return job?(job.tickets||[]).find(x=>x.id===ticketId):null;}
+function svcOrder(a,b){
+  const x=a.t.date||'',y=b.t.date||'';
+  if(x&&y&&x!==y)return x<y?-1:1;
+  if(x&&!y)return -1;if(y&&!x)return 1;
+  if(x&&y)return byTime(a.t,b.t);
+  const p=a.t.createdDate||'',q=b.t.createdDate||'';return p<q?1:p>q?-1:0;
+}
+function allSvc(){const out=[];S.jobs.forEach(j=>(j.tickets||[]).forEach(t=>out.push({job:j,t})));return out;}
+function svcMatch(x,q){if(!q)return true;q=q.toLowerCase();return [x.job.address,x.job.builder,x.t.text,x.t.ticketNo,x.t.contactName,x.t.doneNote,svcKindLabel(x.t.kind)].some(v=>String(v||'').toLowerCase().includes(q));}
+function svcCard(job,t,showHouse){
+  const own=isOwner(),today=todayStr(),A="'"+job.id+"','"+t.id+"'";
+  let h='<div class="svc-card'+(t.done?' done':'')+'">';
+  h+='<div class="svc-top"><div style="min-width:0">'+
+    (showHouse?'<div class="svc-addr"><span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span></div>':'')+
+    '<div class="svc-meta"><span class="chip '+(t.kind==='haustalk'?'chip-blue':t.kind==='third'?'chip-amber':'chip-grey')+'">'+esc(svcKindLabel(t.kind))+(t.ticketNo?' #'+esc(t.ticketNo):'')+'</span>'+
+    (showHouse&&job.builder?'<span>'+esc(job.builder)+'</span>':'')+
+    '<span>Added '+esc(fmtShort(t.createdDate))+(t.createdByName?' by '+esc(t.createdByName):'')+'</span></div></div>'+
+    (own?'<button class="icon-btn" title="Edit" aria-label="Edit service call" onclick="openSvcModal('+A+')">✎</button>':'')+'</div>';
+  h+='<div class="svc-text">'+esc(t.text)+'</div>';
+  let chips='';
   const when=whenText(t.date,t.time);
-  if(t.assignee)chips+='<span class="chip chip-blue">'+esc((t.assignee===S.me.id?'You':userName(t.assignee))||'Assigned')+(when?' · '+esc(when):'')+'</span>';
-  else if(when)chips+='<span class="chip chip-grey">'+esc(when)+'</span>';
+  if(t.assignee)chips+='<span class="chip chip-blue">👤 '+esc((t.assignee===S.me.id?'You':userName(t.assignee))||'Assigned')+(when?' · '+esc(when):'')+'</span>';
+  else if(when)chips+='<span class="chip chip-grey">🗓 '+esc(when)+'</span>';
+  if(!t.done&&t.date&&t.date<today)chips+='<span class="chip chip-red">past due</span>';
+  if((t.crew||[]).length)chips+='<span class="chip chip-grey">👷 '+esc(t.crew.map(c=>c.name).join(', '))+'</span>';
+  if(chips)h+='<div class="svc-chips">'+chips+'</div>';
+  const tel=telOf(t.contactPhone),mu=mapsUrl(job),lk=safeUrl(t.link);
+  if(t.contactName||t.contactPhone||lk||mu){
+    h+='<div class="svc-links">'+
+      (tel?'<a class="btn btn-outline btn-sm" href="tel:'+esc(tel)+'">📞 '+esc(t.contactName||t.contactPhone)+'</a>':t.contactName?'<span class="chip chip-grey">👤 '+esc(t.contactName)+'</span>':'')+
+      (lk?'<a class="btn btn-outline btn-sm" href="'+esc(lk)+'" target="_blank" rel="noopener">'+(t.kind==='haustalk'?'HausTalk':'Link')+' ↗</a>':'')+
+      (mu?'<a class="btn btn-outline btn-sm" href="'+esc(mu)+'" target="_blank" rel="noopener">📍 Map</a>':'')+'</div>';
+  }
+  const files=t.files||[],ups=svcUploads.filter(u=>u.ticketId===t.id&&u.state!=='done');
+  if(files.length||ups.length){
+    h+='<div class="svc-files">'+files.map(f=>'<span class="svc-file"><button class="btn btn-outline btn-sm" onclick="openSvcFile('+A+',\''+f.id+'\')">'+(f.mime==='application/pdf'?'📄':'🖼')+' '+esc(f.name)+'</button>'+(own?'<button class="icon-btn" title="Delete file" aria-label="Delete file" onclick="delSvcFile('+A+',\''+f.id+'\')">✕</button>':'')+'</span>').join('')+
+      ups.map(u=>'<span class="chip '+(u.state==='failed'?'chip-red':'chip-amber')+'">'+(u.state==='failed'?'Not uploaded: '+esc(u.name)+' <button class="btn btn-outline btn-sm" onclick="retrySvcUpload(\''+u.id+'\')">Retry</button>':'Uploading '+esc(u.name)+'...')+'</span>').join('')+'</div>';
+  }
+  if((t.notes||[]).length){
+    h+='<div class="svc-notes">'+t.notes.map(n=>'<div class="svc-note"><b>'+esc(n.byName||'')+'</b> <span class="muted">'+esc(fmtShort(n.date))+'</span> '+esc(n.text)+
+      ((own||n.by===S.me.id)&&n.by?' <button class="link-btn" onclick="delSvcNote('+A+',\''+n.id+'\')">remove</button>':'')+'</div>').join('')+'</div>';
+  }
+  if(t.done){
+    h+='<div class="svc-done">✓ Done '+esc(fmtShort(t.doneDate))+(t.doneByName?' by '+esc(t.doneByName):'')+(t.doneNote?': '+esc(t.doneNote):'')+'</div>';
+    if(own||t.doneBy===S.me.id)h+='<div class="svc-actions"><button class="btn btn-outline btn-sm" onclick="pickSvcFiles('+A+')">📎 Photo or file</button><button class="btn btn-outline btn-sm" onclick="undoTicket('+A+')">Reopen</button></div>';
+  }else{
+    h+='<div class="svc-actions"><button class="btn btn-outline btn-sm" onclick="pickSvcFiles('+A+')">📎 Photo or file</button><button class="btn btn-outline btn-sm" onclick="openSvcNote('+A+')">📝 Note</button><button class="btn btn-outline btn-sm" onclick="openSvcCrew('+A+')">👷 Who worked on it</button><button class="btn btn-green btn-sm" onclick="openTicketDone('+A+')">✓ Done</button></div>';
+  }
+  return h+'</div>';
+}
+// short row for My List and the team view
+function ticketRow(job,t,showHouse){
+  const today=todayStr();
+  const box='<div class="cl-box'+(t.done?' on':'')+'" role="checkbox" aria-checked="'+!!t.done+'" onclick="'+(t.done?'undoTicket':'openTicketDone')+'(\''+job.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>';
+  let chips='<span class="chip chip-grey">🛠 '+esc(svcKindLabel(t.kind))+'</span>';
+  const when=whenText(t.date,t.time);
+  if(when)chips+='<span class="chip chip-grey">'+esc(when)+'</span>';
   if(!t.done&&t.date&&t.date<today)chips+='<span class="chip chip-red">past due</span>';
   const house=showHouse?'<span class="house-link" onclick="openDetail(\''+job.id+'\')">'+esc(job.address)+'</span>':'';
   const done=t.done?'<div class="cl-sub"><span>Done '+esc(fmtShort(t.doneDate))+(t.doneByName?' by '+esc(t.doneByName):'')+(t.doneNote?': '+esc(t.doneNote):'')+'</span></div>':'';
-  return '<div class="cl-row'+(t.done?' done':'')+'">'+box+'<div class="cl-main"><div class="cl-text">'+esc(t.text)+'</div><div class="cl-sub">'+house+chips+'</div>'+done+'</div>'+(own&&!showHouse?'<div class="cl-side"><button class="icon-btn" title="Edit" aria-label="Edit ticket" onclick="openTicketModal(\''+job.id+'\',\''+t.id+'\')">✎</button></div>':'')+'</div>';
+  return '<div class="cl-row'+(t.done?' done':'')+'">'+box+'<div class="cl-main"><div class="cl-text">'+esc(t.text)+'</div><div class="cl-sub">'+house+chips+'</div>'+done+'</div></div>';
 }
 function ticketsCard(job){
   const own=isOwner(),list=job.tickets||[];
-  if(!own&&!list.length)return '';
-  const open=list.filter(t=>!t.done).sort((a,b)=>{const x=a.date||'9999',y=b.date||'9999';return x<y?-1:x>y?1:byTime(a,b);});
+  const open=list.filter(t=>!t.done).map(t=>({job,t})).sort(svcOrder).map(x=>x.t);
   const done=list.filter(t=>t.done).sort((a,b)=>a.doneDate<b.doneDate?1:-1);
-  let h='<div class="full-card"><div class="full-card-title">🛠 Service and warranty <span>'+open.length+' open</span></div>'+
-    (open.concat(done).map(t=>ticketRow(job,t,false)).join('')||'<div class="muted" style="padding:6px 0">No warranty tickets on this house.</div>');
-  if(own)h+='<div class="add-row"><input class="form-input" id="new-ticket-text" placeholder="Add a warranty ticket for this house..." onkeydown="if(event.key===\'Enter\')addTicket()"><button class="btn btn-primary" onclick="addTicket()">Add</button><button class="btn btn-outline" onclick="openTicketModal(\''+job.id+'\')">Add with details</button></div>';
-  else h+='<div class="form-hint" style="margin-top:8px">Tap the box when a ticket is finished and write what was done.</div>';
+  let h='<div class="full-card"><div class="full-card-title">🛠 Service and warranty <span>'+open.length+' open</span></div>';
+  h+=open.map(t=>svcCard(job,t,false)).join('');
+  if(!list.length)h+='<div class="muted" style="padding:6px 0">No service or warranty calls on this house.</div>';
+  if(done.length)h+='<div class="svc-sub">Completed</div>'+done.map(t=>svcCard(job,t,false)).join('');
+  if(own)h+='<div class="add-row"><input class="form-input" id="new-ticket-text" placeholder="Add a service call for this house..." onkeydown="if(event.key===\'Enter\')addTicket()"><button class="btn btn-primary" onclick="addTicket()">Add</button><button class="btn btn-outline" onclick="openSvcModal(\''+job.id+'\')">Add with details</button></div>';
   return h+'</div>';
 }
-function addTicket(){const el=$('new-ticket-text');const text=el.value.trim();if(!text)return;el.value='';jobOp('ticketAdd',{ticketId:genId('w_'),text});}
-function openTicketModal(jobId,ticketId){
-  const job=getJob(jobId);if(!job)return;const t=ticketId?(job.tickets||[]).find(x=>x.id===ticketId):null;
-  openModal({title:t?'Edit warranty ticket':'Add warranty ticket',body:
-    '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+
-    '<div class="form-group"><label class="form-label">What needs to be fixed</label><textarea class="form-textarea" id="wt-text" data-focus>'+esc(t?t.text:($('new-ticket-text')?$('new-ticket-text').value:''))+'</textarea></div>'+
-    '<div class="form-group"><label class="form-label">Assign to (optional)</label><select class="form-select" id="wt-assignee">'+userOptions(t?t.assignee:'','Nobody yet')+'</select></div>'+
-    '<div class="form-row"><div class="form-group"><label class="form-label">Day (optional)</label><input class="form-input" id="wt-day" type="date" value="'+esc(t?t.date||'':'')+'"></div><div class="form-group"><label class="form-label">Time (optional)</label><input class="form-input" id="wt-time" type="time" value="'+esc(t?t.time||'':'')+'"></div></div>'+
-    (t&&t.done?'<div class="form-group"><label class="form-label">What was done</label><textarea class="form-textarea" id="wt-done">'+esc(t.doneNote||'')+'</textarea></div>':'')+
-    '<div class="form-hint">Warranty tickets stay in this house\'s history and are kept apart from the build checklist. Add a time only when someone must be there at a set time.</div>',
-    buttons:(t?[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete this warranty ticket?'))return;closeModal();mutate('jobOp',{jobId,op:'ticketDel',args:{ticketId}});}}]:[]).concat([{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
-      const args={ticketId:t?t.id:genId('w_'),text:$('wt-text').value.trim(),assignee:$('wt-assignee').value,day:$('wt-day').value,time:$('wt-time').value};
-      if(t&&t.done&&$('wt-done'))args.doneNote=$('wt-done').value.trim();
-      if(!args.text){toast('Type what needs to be fixed.',true);return;}
-      if(!t&&$('new-ticket-text'))$('new-ticket-text').value='';
-      closeModal();mutate('jobOp',{jobId,op:t?'ticketEdit':'ticketAdd',args});}}])});
+function svcLocal(id,a){return {id,kind:a.kind||'builder',text:a.text,assignee:a.assignee||'',date:a.day||'',time:a.time||'',contactName:a.contactName||'',contactPhone:a.contactPhone||'',ticketNo:a.ticketNo||'',link:a.link||'',files:[],notes:[],crew:[],createdByName:S.me.name,createdDate:todayStr(),done:false,doneDate:'',doneNote:'',doneBy:'',doneByName:''};}
+function addTicket(){
+  const el=$('new-ticket-text');const text=el.value.trim();if(!text)return;el.value='';
+  const job=getJob(currentJobId);if(!job)return;const id=genId('w_'),args={ticketId:id,text,kind:'builder'};
+  jobOp('ticketAdd',args,()=>{(job.tickets=job.tickets||[]).push(svcLocal(id,args));});
+}
+function houseKey(s){return cityKey(s).replace(/[.,#]/g,' ').replace(/\s+/g,' ').trim();}
+function findHouse(addr){const k=houseKey(addr);return k?S.jobs.find(j=>houseKey(j.address)===k):null;}
+function svcKindChanged(){const k=$('sv-kind').value;$('sv-ht').style.display=k==='haustalk'?'':'none';$('sv-text-label').textContent=k==='third'?'Inspection list or what needs to be done':'What needs to be fixed';}
+function openSvcModal(jobId,ticketId){
+  if(!isOwner())return;
+  const job=jobId?getJob(jobId):null;const t=job&&ticketId?(job.tickets||[]).find(x=>x.id===ticketId):null;
+  const kind=t?t.kind:'builder';
+  const quick=$('new-ticket-text')&&jobId&&!t?$('new-ticket-text').value:'';
+  const houses=S.jobs.map(j=>j.address).filter(Boolean).sort();
+  openModal({title:t?'Edit service call':'Add service call',body:
+    (job?'<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>':
+      '<div class="form-group"><label class="form-label">House address</label><input class="form-input" id="sv-house" list="sv-houses" data-focus autocomplete="off" placeholder="Start typing the address" oninput="svHouseTyped()">'+dataList('sv-houses',houses)+'<div class="form-hint" id="sv-house-hint">Pick a house from the list, or type a new address.</div></div>'+
+      '<div class="form-group" id="sv-builder-row" style="display:none"><label class="form-label">Builder (new house)</label><input class="form-input" id="sv-builder" list="sv-builders">'+dataList('sv-builders',knownBuilders())+'<div class="form-hint">A new house added here stays off the main Houses list. It shows in Completed and here.</div></div>')+
+    '<div class="form-group"><label class="form-label">Type</label><select class="form-select" id="sv-kind" onchange="svcKindChanged()">'+SVC_KINDS.map(k=>'<option value="'+k[0]+'"'+(k[0]===kind?' selected':'')+'>'+k[1]+'</option>').join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label" id="sv-text-label">'+(kind==='third'?'Inspection list or what needs to be done':'What needs to be fixed')+'</label><textarea class="form-textarea" id="sv-text"'+(job?' data-focus':'')+'>'+esc(t?t.text:quick)+'</textarea></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Contact name</label><input class="form-input" id="sv-cname" value="'+esc(t?t.contactName:'')+'" placeholder="Homeowner or builder contact"></div><div class="form-group"><label class="form-label">Contact phone</label><input class="form-input" id="sv-cphone" type="tel" value="'+esc(t?t.contactPhone:'')+'" placeholder="832 555 1234"></div></div>'+
+    '<div id="sv-ht" style="'+(kind==='haustalk'?'':'display:none')+'"><div class="form-row"><div class="form-group"><label class="form-label">HausTalk ticket #</label><input class="form-input" id="sv-tno" value="'+esc(t?t.ticketNo:'')+'"></div><div class="form-group"><label class="form-label">HausTalk link</label><input class="form-input" id="sv-link" value="'+esc(t?t.link:'')+'" placeholder="https://www.haustalk.com/..."></div></div></div>'+
+    '<div class="form-group"><label class="form-label">Assign to (optional)</label><select class="form-select" id="sv-assignee">'+userOptions(t?t.assignee:'','Nobody yet')+'</select><div class="form-hint">It shows on that person\'s list. Only they and the owners see who it is assigned to.</div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Day (optional)</label><input class="form-input" id="sv-day" type="date" value="'+esc(t?t.date||'':'')+'"></div><div class="form-group"><label class="form-label">Time (optional)</label><input class="form-input" id="sv-time" type="time" value="'+esc(t?t.time||'':'')+'"></div></div>'+
+    (t&&t.done?'<div class="form-group"><label class="form-label">What was done</label><textarea class="form-textarea" id="sv-done">'+esc(t.doneNote||'')+'</textarea></div>':'')+
+    (t?'':'<div class="form-group"><label class="form-label">Photos or PDF (optional)</label><input class="form-input" id="sv-files" type="file" accept="image/*,application/pdf" multiple><div class="form-hint">For example the 3rd party inspector\'s list. You can add more later.</div></div>'),
+    buttons:(t?[{label:'Delete',cls:'btn-red',fn:()=>{if(!confirm('Delete this service call? A copy is kept in the Deleted tab of the sheet.'))return;closeModal();mutate('jobOp',{jobId:job.id,op:'ticketDel',args:{ticketId:t.id}},()=>{job.tickets=job.tickets.filter(x=>x!==t);});}}]:[]).concat([{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{
+      const k=$('sv-kind').value;
+      const args={kind:k,text:$('sv-text').value.trim(),contactName:$('sv-cname').value.trim(),contactPhone:$('sv-cphone').value.trim(),
+        ticketNo:k==='haustalk'?$('sv-tno').value.trim():(t?t.ticketNo:''),link:k==='haustalk'?$('sv-link').value.trim():(t?t.link:''),
+        assignee:$('sv-assignee').value,day:$('sv-day').value,time:$('sv-time').value};
+      if(!args.text){toast(k==='third'?'Type what the list is for, like "City 3rd party inspection list".':'Type what needs to be fixed.',true);return;}
+      if(args.link&&!safeUrl(args.link)){toast('The link must start with https://',true);return;}
+      if(t){if(t.done&&$('sv-done'))args.doneNote=$('sv-done').value.trim();args.ticketId=t.id;closeModal();
+        mutate('jobOp',{jobId:job.id,op:'ticketEdit',args},()=>{Object.assign(t,{kind:args.kind,text:args.text,contactName:args.contactName,contactPhone:args.contactPhone,ticketNo:args.ticketNo,link:args.link,assignee:args.assignee,date:args.day,time:args.time});if(args.doneNote!=null)t.doneNote=args.doneNote;});return;}
+      let target=job;
+      if(!target){
+        const addr=$('sv-house').value.trim();if(!addr){toast('Type the house address.',true);return;}
+        target=findHouse(addr);
+        if(!target){
+          const nj={id:genId('j_'),address:addr,builder:$('sv-builder').value.trim(),status:'complete'};
+          mutate('jobCreate',{job:nj},()=>{S.jobs.push({id:nj.id,address:addr,builder:nj.builder,subdivision:'',status:'complete',city:'',zip:'',permit:'',notes:'',phases:[],log:[],fixtures:[],docs:{},inspections:{},inspLog:[],checklist:[],inspReqs:[],tickets:[],plans:[],crewNotes:[],crew:{}});});
+          target=getJob(nj.id);
+        }
+      }
+      const files=$('sv-files')?[...$('sv-files').files]:[];
+      const id=genId('w_');args.ticketId=id;const tj=target;
+      if($('new-ticket-text'))$('new-ticket-text').value='';
+      closeModal();
+      mutate('jobOp',{jobId:tj.id,op:'ticketAdd',args},()=>{(tj.tickets=tj.tickets||[]).push(svcLocal(id,args));}).then(ok=>{if(ok&&files.length)queueSvcFiles(tj.id,id,files);});
+      toast('Service call added');
+    }}])});
+}
+function svHouseTyped(){const v=$('sv-house').value.trim();const hit=findHouse(v);$('sv-builder-row').style.display=v&&!hit?'':'none';$('sv-house-hint').textContent=!v?'Pick a house from the list, or type a new address.':hit?'House found: '+(hit.builder||'no builder')+(hit.status==='complete'?', completed house':''):'New house. It will be added for this service call.';}
+function svcCrewPicker(t){
+  const people=activeUsers();if(!people.length)return '';
+  const cur=(t.crew||[]).map(c=>c.id);if(!cur.length&&t.assignee)cur.push(t.assignee);
+  return '<div class="form-group"><label class="form-label">Who worked on it?</label><div class="crew-pick">'+people.map(u=>'<label class="crew-chip'+(cur.includes(u.id)?' on':'')+'"><input type="checkbox" value="'+esc(u.id)+'"'+(cur.includes(u.id)?' checked':'')+' onchange="this.parentNode.classList.toggle(\'on\',this.checked)">'+esc(u.name)+'</label>').join('')+'</div><div class="form-hint">They go on the work log and the reports.</div></div>';
 }
 function openTicketDone(jobId,ticketId){
-  const job=getJob(jobId);const t=job&&(job.tickets||[]).find(x=>x.id===ticketId);if(!t)return;
-  openModal({title:'Finish warranty ticket',body:
+  const job=getJob(jobId);const t=getTicket(jobId,ticketId);if(!t||t.done)return;
+  const third=t.kind==='third';
+  openModal({title:'Mark done',body:
     '<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b><br>'+esc(t.text)+'</p>'+
     '<div class="form-group"><label class="form-label">Date the work was done</label><input class="form-input" id="wd-date" type="date" max="'+todayStr()+'" value="'+wd()+'"></div>'+
-    '<div class="form-group"><label class="form-label">What was done</label><textarea class="form-textarea" id="wd-note" data-focus placeholder="Example: replaced the p trap under the kitchen sink"></textarea></div>',
-    buttons:[{label:'Cancel',fn:closeModal},{label:'Mark finished',cls:'btn-green',fn:()=>{
-      const date=$('wd-date').value||todayStr(),note=$('wd-note').value.trim();
-      if(!note){toast('Write what was done.',true);return;}
-      closeModal();mutate('jobOp',{jobId,op:'ticketDone',args:{ticketId,date,note}},()=>{t.done=true;t.doneDate=date;t.doneNote=note;t.doneBy=S.me.id;t.doneByName=S.me.name;});}}]});
+    '<div class="form-group"><label class="form-label">'+(third?'Notes (optional)':'What was done')+'</label><textarea class="form-textarea" id="wd-note" data-focus placeholder="'+(third?'Anything the office should know':'Example: replaced the p trap under the kitchen sink')+'"></textarea></div>'+
+    svcCrewPicker(t),
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Mark done',cls:'btn-green',fn:()=>{
+      const date=$('wd-date').value||todayStr(),note=$('wd-note').value.trim(),crew=pickedCrew();
+      if(!note&&!third){toast('Write what was done.',true);return;}
+      closeModal();mutate('jobOp',{jobId,op:'ticketDone',args:{ticketId,date,note,crew}},()=>{t.done=true;t.doneDate=date;t.doneNote=note;t.doneBy=S.me.id;t.doneByName=S.me.name;t.crew=crew.map(id=>({id,name:userName(id)}));});
+      toast('Marked done. It moved to Completed.');
+    }}]});
 }
 function undoTicket(jobId,ticketId){
-  const job=getJob(jobId);const t=job&&(job.tickets||[]).find(x=>x.id===ticketId);if(!t)return;
+  const t=getTicket(jobId,ticketId);if(!t)return;
   if(!isOwner()&&t.doneBy!==S.me.id){toast('Only the person who finished this, or an owner, can reopen it.',true);return;}
   if(!confirm('Reopen "'+t.text+'"?'))return;
-  mutate('jobOp',{jobId,op:'ticketUndo',args:{ticketId}},()=>{t.done=false;t.doneDate='';t.doneNote='';t.doneByName='';});
+  mutate('jobOp',{jobId,op:'ticketUndo',args:{ticketId}},()=>{t.done=false;t.doneDate='';t.doneNote='';t.doneBy='';t.doneByName='';});
+}
+function openSvcCrew(jobId,ticketId){
+  const job=getJob(jobId);const t=getTicket(jobId,ticketId);if(!t)return;
+  openModal({title:'Who worked on it',body:'<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b><br>'+esc(t.text)+'</p>'+svcCrewPicker(t),
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{const crew=pickedCrew();closeModal();mutate('jobOp',{jobId,op:'ticketCrew',args:{ticketId,crew,date:wd()}},()=>{t.crew=crew.map(id=>({id,name:userName(id)}));});}}]});
+}
+function openSvcNote(jobId,ticketId){
+  const job=getJob(jobId);const t=getTicket(jobId,ticketId);if(!t)return;
+  openModal({title:'Add a note',body:'<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b><br>'+esc(t.text)+'</p><div class="form-group"><textarea class="form-textarea" id="sn-text" data-focus placeholder="Example: homeowner not home, came back at 3"></textarea><div class="form-hint">Everyone on the team can see notes.</div></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{const text=$('sn-text').value.trim();if(!text){toast('Type a note.',true);return;}const noteId=genId('n_'),date=wd();closeModal();
+      mutate('jobOp',{jobId,op:'ticketNote',args:{ticketId,noteId,text,date}},()=>{(t.notes=t.notes||[]).push({id:noteId,by:S.me.id,byName:S.me.name,text,date});});}}]});
+}
+function delSvcNote(jobId,ticketId,noteId){
+  const t=getTicket(jobId,ticketId);if(!t)return;if(!confirm('Remove this note?'))return;
+  mutate('jobOp',{jobId,op:'ticketNoteDel',args:{ticketId,noteId}},()=>{t.notes=(t.notes||[]).filter(n=>n.id!==noteId);});
+}
+let svcPickTarget=null;
+function pickSvcFiles(jobId,ticketId){svcPickTarget={jobId,ticketId};const i=$('svc-file-input');i.value='';i.click();}
+function svcFilesPicked(input){if(!svcPickTarget)return;queueSvcFiles(svcPickTarget.jobId,svcPickTarget.ticketId,[...input.files]);}
+function queueSvcFiles(jobId,ticketId,files){
+  files.slice(0,10).forEach(file=>svcUploads.push({id:genId('sf_'),jobId,ticketId,file,name:file.name||'file',state:'waiting',date:wd()}));
+  if(files.length>10)toast('Only the first 10 files were added.',true);
+  render();runSvcUploads();
+}
+let svcUploading=false;
+async function runSvcUploads(){
+  if(svcUploading)return;svcUploading=true;
+  for(;;){
+    const u=svcUploads.find(x=>x.state==='waiting');if(!u)break;
+    u.state='sending';
+    try{
+      if(!u.data){
+        const pdf=u.file.type==='application/pdf'||/\.pdf$/i.test(u.name);
+        if(pdf){if(u.file.size>30*1024*1024)throw new Error('That PDF is too large. Files can be up to 30 MB.');u.data=await readB64(u.file);}
+        else{const img=await loadImage(u.file);u.data=shrink(img,2000,0.8);u.name=u.name.replace(/\.[a-z0-9]{2,5}$/i,'')+'.jpg';}
+      }
+      const d=await api('svcUpload',{file:{id:u.id,jobId:u.jobId,ticketId:u.ticketId,name:u.name,date:u.date},data:u.data},180000);
+      u.state='done';u.data=null;u.file=null;applyResponse(d);saveCache();toast('Added '+u.name);
+    }catch(e){u.state='failed';u.error=e.code==='offline'?'No signal':(e.message==='bad image'?'This photo type cannot be read. Try a JPG or PNG.':e.message);toast('A file did not upload: '+u.error,true);if(e.code==='auth'){svcUploading=false;authLost(e.message);return;}}
+    safeRender();
+  }
+  svcUploading=false;
+}
+function retrySvcUpload(id){const u=svcUploads.find(x=>x.id===id);if(u){u.state='waiting';render();runSvcUploads();}}
+async function openSvcFile(jobId,ticketId,fileId){
+  const t=getTicket(jobId,ticketId);const f=t&&(t.files||[]).find(x=>x.id===fileId);if(!f)return;
+  if(safeUrl(f.url)){window.open(f.url,'_blank','noopener');return;}
+  const w=window.open('','_blank');
+  if(w){try{w.document.write('<p style="font-family:sans-serif;padding:20px">Opening...</p>');}catch(e){}}
+  try{
+    const d=await api('svcFileGet',{jobId,ticketId,id:fileId},180000);
+    const bin=atob(d.data);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([arr],{type:d.mime||'application/pdf'}));
+    if(w&&!w.closed)w.location.href=url;
+    else openModal({title:'File ready',body:'<a class="btn btn-primary" href="'+url+'" target="_blank" rel="noopener">Open '+esc(d.name||'file')+'</a>',buttons:[{label:'Close',fn:closeModal}]});
+  }catch(e){if(w&&!w.closed)w.close();toast(e.code==='offline'?'No connection. Try again.':e.message,true);}
+}
+function delSvcFile(jobId,ticketId,fileId){
+  const t=getTicket(jobId,ticketId);const f=t&&(t.files||[]).find(x=>x.id===fileId);if(!f)return;
+  if(!confirm('Delete '+f.name+'? It moves to the trash in Google Drive.'))return;
+  mutate('jobOp',{jobId,op:'ticketFileDel',args:{ticketId,fileId}},()=>{t.files=t.files.filter(x=>x!==f);});
+}
+function renderService(){
+  const own=isOwner(),all=allSvc();
+  const open=all.filter(x=>!x.t.done&&svcMatch(x,svcSearch)).sort(svcOrder);
+  const done=all.filter(x=>x.t.done&&svcMatch(x,svcSearch)).sort((a,b)=>a.t.doneDate<b.t.doneDate?1:a.t.doneDate>b.t.doneDate?-1:0);
+  let h='<div class="toolbar"><input class="search-input" id="svc-search" type="search" placeholder="Search address, problem, ticket #, contact..." value="'+esc(svcSearch)+'" oninput="svcSearch=this.value;renderService()">'+
+    (own?'<button class="btn btn-primary" onclick="openSvcModal()">+ Add service call</button>':'')+'</div>';
+  h+='<div class="section-title">Open <span class="muted" style="font-family:inherit;font-size:14px">'+open.length+'</span></div>';
+  h+=open.map(x=>svcCard(x.job,x.t,true)).join('')||'<div class="empty-state">'+(svcSearch?'No open calls match.':'No open service calls right now.')+'</div>';
+  h+='<button class="svc-done-toggle" onclick="svcShowDone=!svcShowDone;renderService()">✅ Completed ('+done.length+')<span>'+(svcShowDone?'Hide ▲':'Show ▼')+'</span></button>';
+  if(svcShowDone)h+=done.slice(0,60).map(x=>svcCard(x.job,x.t,true)).join('')+(done.length>60?'<div class="muted" style="text-align:center;padding:10px">Showing the newest 60. Search to find older ones.</div>':'');
+  $('service-body').innerHTML=h;
 }
 
 // ---------- phone book
