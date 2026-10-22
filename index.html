@@ -419,7 +419,7 @@ const LOGO_SRC='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbgAAAD6CAMAAADk86
 const DOC_ICONS = ['🏗️','📐','📦','📎'];
 const STATUS_LABELS = {active:'Active',complete:'Complete',pending:'Pending',warranty:'Warranty'};
 
-const S = {token:'',me:null,jobs:[],tasks:[],contacts:[],settings:{inspLinks:{},checklistTemplate:[],groupOrder:[]},users:[],team:[],photoCounts:{},setupOpen:false};
+const S = {token:'',me:null,jobs:[],tasks:[],timeOff:[],contacts:[],settings:{inspLinks:{},checklistTemplate:[],groupOrder:[]},users:[],team:[],photoCounts:{},setupOpen:false};
 let queue=[],flushing=false,currentJobId=null,workDate='',tab='',lastSync=0,renderPending=false;
 let jobFilter='all',jobSearch='',inspSearch='',inspFilter='all',completedSearch='',teamDate='',pbSearch='';
 const photoCache={},uploads=[];
@@ -474,9 +474,10 @@ function applyResponse(d){
   if(d.users)S.users=d.users;
   if(d.settings)S.settings=d.settings;
   if(d.setupOpen!=null)S.setupOpen=d.setupOpen;
+  if(d.timeOff)S.timeOff=d.timeOff;
   if(d.deleted){S.jobs=S.jobs.filter(j=>j.id!==d.deleted);S.tasks.forEach(t=>{if(t.jobId===d.deleted)t.jobId='';});}
 }
-function saveCache(){lsSet('pjt2_cache',JSON.stringify({jobs:S.jobs,tasks:S.tasks,contacts:S.contacts,settings:S.settings,users:S.users,team:S.team,photoCounts:S.photoCounts}));}
+function saveCache(){lsSet('pjt2_cache',JSON.stringify({jobs:S.jobs,tasks:S.tasks,timeOff:S.timeOff,contacts:S.contacts,settings:S.settings,users:S.users,team:S.team,photoCounts:S.photoCounts}));}
 function saveQueue(){lsSet('pjt2_queue',JSON.stringify(queue));updateQueueBanner();}
 function updateQueueBanner(){
   const b=$('queue-banner');
@@ -524,7 +525,7 @@ async function sync(manual){
   setSyncStatus('saving','Loading...');
   try{
     const d=await api('load');
-    S.me=d.me;S.jobs=d.jobs;S.tasks=d.tasks;S.contacts=d.contacts||[];S.settings=d.settings;S.users=d.users||[];S.team=d.team||[];S.photoCounts=d.photoCounts||{};S.setupOpen=!!d.setupOpen;
+    S.me=d.me;S.jobs=d.jobs;S.tasks=d.tasks;S.timeOff=d.timeOff||[];S.contacts=d.contacts||[];S.settings=d.settings;S.users=d.users||[];S.team=d.team||[];S.photoCounts=d.photoCounts||{};S.setupOpen=!!d.setupOpen;
     lsSet('pjt2_me',JSON.stringify(S.me));saveCache();lastSync=Date.now();
     setSyncStatus('saved','✓ Up to date');
     safeRender();
@@ -611,7 +612,7 @@ function tabsFor(){
   const myBadge=mine?'<span class="tab-count">'+mine+'</span>':'';
   const svcOpen=allSvc().filter(x=>!x.t.done).length;
   const svcTab=['service','🛠 Service and warranty'+(svcOpen?'<span class="tab-count">'+svcOpen+'</span>':'')];
-  if(isOwner())return [['inspections','📋 Inspections'+failBadge],['jobs','🏠 Houses'],svcTab,['team','👷 Team & To Dos'],['phonebook','📞 Phone Book'],['reports','📊 Reports'],['completed','✅ Completed'],['mylist','📝 My List'+myBadge]];
+  if(isOwner())return [['inspections','📋 Inspections'+failBadge],['jobs','🏠 Houses'],svcTab,['team','👷 Team & To Dos'+(pendingTimeOff().length?'<span class="tab-count">'+pendingTimeOff().length+'</span>':'')],['phonebook','📞 Phone Book'],['reports','📊 Reports'],['completed','✅ Completed'],['mylist','📝 My List'+myBadge]];
   return [['mylist','📝 My List'+myBadge],['jobs','🏠 Houses'],svcTab,['inspections','📋 Inspections'+failBadge],['phonebook','📞 Phone Book'],['completed','✅ Completed']];
 }
 function switchTab(t){tab=t;workDate='';render();window.scrollTo(0,0);}
@@ -785,6 +786,7 @@ function renderMyList(){
     h+='</div>';
   }
   if(!overdue.length&&!todays.length&&!soon.length&&!undated.length)h+='<div class="empty-state">Nothing on your list right now.<br>Open a house to check off work you finished.</div>';
+  h+=myTimeOffCard();
   h+='<div class="muted" style="text-align:center;margin-top:6px">Only you and the owners can see this list.</div>';
   $('mylist-body').innerHTML=h;
 }
@@ -1066,14 +1068,41 @@ function openHouseNotes(){
 }
 
 // ---------- Who worked on it (picked when an inspection is set, passed or failed)
-function crewPicker(job,key){
-  const cur=((job.crew||{})[key]||[]).map(c=>c.id);
+// ---------- Who worked on it: people with a login, plus helpers typed in by name (they never get a login)
+function helperNames(){
+  const s={};
+  const add=c=>{if(c&&!c.id&&c.name)s[c.name.trim()]=1;};
+  S.jobs.forEach(j=>{Object.values(j.crew||{}).forEach(l=>(l||[]).forEach(add));(j.tickets||[]).forEach(t=>(t.crew||[]).forEach(add));});
+  return Object.keys(s).sort((a,b)=>a.localeCompare(b));
+}
+function crewChip(val,name,on){return '<label class="crew-chip'+(on?' on':'')+'"><input type="checkbox" value="'+esc(val)+'"'+(on?' checked':'')+' onchange="this.parentNode.classList.toggle(\'on\',this.checked)">'+esc(name)+'</label>';}
+function crewChoices(cur,label,hint){
   const people=activeUsers();
-  if(!people.length)return '';
-  return '<div class="form-group"><label class="form-label">Who worked on this phase?</label><div class="crew-pick">'+people.map(u=>'<label class="crew-chip'+(cur.includes(u.id)?' on':'')+'"><input type="checkbox" value="'+esc(u.id)+'"'+(cur.includes(u.id)?' checked':'')+' onchange="this.parentNode.classList.toggle(\'on\',this.checked)">'+esc(u.name)+'</label>').join('')+'</div><div class="form-hint">They go on the work log and the reports for you.</div></div>';
+  const ids=cur.filter(c=>c.id).map(c=>c.id);
+  const helpersOn=cur.filter(c=>!c.id).map(c=>c.name.toLowerCase());
+  const helpers=helperNames();cur.filter(c=>!c.id).forEach(c=>{if(!helpers.some(h=>h.toLowerCase()===c.name.toLowerCase()))helpers.push(c.name);});
+  return '<div class="form-group"><label class="form-label">'+label+'</label><div class="crew-pick" id="crew-pick">'+
+    people.map(u=>crewChip(u.id,u.name,ids.includes(u.id))).join('')+
+    helpers.map(n=>crewChip('n:'+n,n,helpersOn.includes(n.toLowerCase()))).join('')+'</div>'+
+    '<div class="add-row" style="margin-top:8px"><input class="form-input" id="crew-extra" placeholder="Someone else, like Pancho" maxlength="40" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addCrewName();}"><button class="btn btn-outline" type="button" onclick="addCrewName()">+ Add name</button></div>'+
+    '<div class="form-hint">'+hint+' Names you type in are only for the record. They don\'t get a login.</div></div>';
+}
+function addCrewName(){
+  const el=$('crew-extra');const n=el.value.trim().replace(/\s+/g,' ').slice(0,40);if(!n)return;el.value='';
+  const u=(S.users.length?S.users:S.team).find(x=>x.name.toLowerCase()===n.toLowerCase());
+  const val=u?u.id:'n:'+n;
+  const box=[...document.querySelectorAll('#crew-pick input')].find(x=>x.value.toLowerCase()===val.toLowerCase());
+  if(box){box.checked=true;box.parentNode.classList.add('on');return;}
+  $('crew-pick').insertAdjacentHTML('beforeend',crewChip(val,n,true));
+}
+function crewPicker(job,key){return crewChoices(((job.crew||{})[key])||[],'Who worked on this phase?','They go on the work log and the reports for you.');}
+function svcCrewPicker(t){
+  let cur=(t.crew||[]).slice();if(!cur.length&&t.assignee)cur=[{id:t.assignee,name:userName(t.assignee)}];
+  return crewChoices(cur,'Who worked on it?','They go on the work log and the reports.');
 }
 function pickedCrew(){return [...document.querySelectorAll('.crew-pick input:checked')].map(x=>x.value);}
-function setCrewLocal(job,key,ids){job.crew=job.crew||{};job.crew[key]=ids.map(id=>({id,name:userName(id)}));}
+function crewObjs(vals){return vals.map(v=>/^n:/.test(v)?{id:'',name:v.slice(2)}:{id:v,name:userName(v)});}
+function setCrewLocal(job,key,ids){job.crew=job.crew||{};job.crew[key]=crewObjs(ids);}
 function openCrewModal(jobId,key){
   const job=getJob(jobId);if(!job)return;
   openModal({title:inspLabel(key)+': who worked on it',body:'<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b></p>'+crewPicker(job,key),
@@ -1427,11 +1456,6 @@ function openSvcModal(jobId,ticketId){
     }}])});
 }
 function svHouseTyped(){const v=$('sv-house').value.trim();const hit=findHouse(v);$('sv-builder-row').style.display=v&&!hit?'':'none';$('sv-house-hint').textContent=!v?'Pick a house from the list, or type a new address.':hit?'House found: '+(hit.builder||'no builder')+(hit.status==='complete'?', completed house':''):'New house. It will be added for this service call.';}
-function svcCrewPicker(t){
-  const people=activeUsers();if(!people.length)return '';
-  const cur=(t.crew||[]).map(c=>c.id);if(!cur.length&&t.assignee)cur.push(t.assignee);
-  return '<div class="form-group"><label class="form-label">Who worked on it?</label><div class="crew-pick">'+people.map(u=>'<label class="crew-chip'+(cur.includes(u.id)?' on':'')+'"><input type="checkbox" value="'+esc(u.id)+'"'+(cur.includes(u.id)?' checked':'')+' onchange="this.parentNode.classList.toggle(\'on\',this.checked)">'+esc(u.name)+'</label>').join('')+'</div><div class="form-hint">They go on the work log and the reports.</div></div>';
-}
 function openTicketDone(jobId,ticketId){
   const job=getJob(jobId);const t=getTicket(jobId,ticketId);if(!t||t.done)return;
   const third=t.kind==='third';
@@ -1443,7 +1467,7 @@ function openTicketDone(jobId,ticketId){
     buttons:[{label:'Cancel',fn:closeModal},{label:'Mark done',cls:'btn-green',fn:()=>{
       const date=$('wd-date').value||todayStr(),note=$('wd-note').value.trim(),crew=pickedCrew();
       if(!note&&!third){toast('Write what was done.',true);return;}
-      closeModal();mutate('jobOp',{jobId,op:'ticketDone',args:{ticketId,date,note,crew}},()=>{t.done=true;t.doneDate=date;t.doneNote=note;t.doneBy=S.me.id;t.doneByName=S.me.name;t.crew=crew.map(id=>({id,name:userName(id)}));});
+      closeModal();mutate('jobOp',{jobId,op:'ticketDone',args:{ticketId,date,note,crew}},()=>{t.done=true;t.doneDate=date;t.doneNote=note;t.doneBy=S.me.id;t.doneByName=S.me.name;t.crew=crewObjs(crew);});
       toast('Marked done. It moved to Completed.');
     }}]});
 }
@@ -1456,7 +1480,7 @@ function undoTicket(jobId,ticketId){
 function openSvcCrew(jobId,ticketId){
   const job=getJob(jobId);const t=getTicket(jobId,ticketId);if(!t)return;
   openModal({title:'Who worked on it',body:'<p style="font-size:14px;margin-bottom:10px"><b>'+esc(job.address)+'</b><br>'+esc(t.text)+'</p>'+svcCrewPicker(t),
-    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{const crew=pickedCrew();closeModal();mutate('jobOp',{jobId,op:'ticketCrew',args:{ticketId,crew,date:wd()}},()=>{t.crew=crew.map(id=>({id,name:userName(id)}));});}}]});
+    buttons:[{label:'Cancel',fn:closeModal},{label:'Save',cls:'btn-primary',fn:()=>{const crew=pickedCrew();closeModal();mutate('jobOp',{jobId,op:'ticketCrew',args:{ticketId,crew,date:wd()}},()=>{t.crew=crewObjs(crew);});}}]});
 }
 function openSvcNote(jobId,ticketId){
   const job=getJob(jobId);const t=getTicket(jobId,ticketId);if(!t)return;
@@ -1660,7 +1684,7 @@ function renderTeam(){
   const today=todayStr();const d=teamDate||today;
   const people=activeUsers().slice().sort((a,b)=>(a.role===b.role?0:a.role==='employee'?-1:1));
   const jobOpts='<option value="">No house</option>'+listSort(S.jobs.filter(j=>j.status!=='complete')).map(j=>'<option value="'+j.id+'">'+esc(j.address)+'</option>').join('');
-  let h='<div class="section-title">Daily to do lists</div><div class="toolbar no-print" style="justify-content:flex-start"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,-1)+'\')">◀</button><input type="date" class="search-input" style="max-width:170px;flex:none" value="'+d+'" onchange="setTeamDate(this.value)"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,1)+'\')">▶</button>'+(d!==today?'<button class="btn btn-outline" onclick="setTeamDate(\'\')">Today</button>':'')+'<b>'+esc(fmtDay(d))+'</b><span class="muted">Each person sees only their own list.</span></div><div class="team-grid">';
+  let h=teamTimeOffCard()+'<div class="section-title">Daily to do lists</div><div class="toolbar no-print" style="justify-content:flex-start"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,-1)+'\')">◀</button><input type="date" class="search-input" style="max-width:170px;flex:none" value="'+d+'" onchange="setTeamDate(this.value)"><button class="btn btn-outline" onclick="setTeamDate(\''+addDays(d,1)+'\')">▶</button>'+(d!==today?'<button class="btn btn-outline" onclick="setTeamDate(\'\')">Today</button>':'')+'<b>'+esc(fmtDay(d))+'</b><span class="muted">Each person sees only their own list.</span></div><div class="team-grid">';
   people.forEach(u=>{
     const mine=S.tasks.filter(t=>t.assigneeId===u.id);
     const late=d===today?mine.filter(t=>!t.done&&t.date<today):[];
@@ -1668,7 +1692,7 @@ function renderTeam(){
     const tix=[];S.jobs.forEach(j=>(j.tickets||[]).forEach(t=>{if(t.assignee===u.id&&(t.date===d||(d===today&&!t.done&&t.date&&t.date<today)))tix.push({j,t});}));
     const items=[];S.jobs.forEach(j=>{if(j.status==='complete')return;(j.checklist||[]).forEach(it=>{if(it.assignee===u.id&&(it.due===d||(d===today&&it.due&&it.due<today&&itemDone(it)<(Number(it.qty)||1))))items.push({j,it});});});
     const open=day.filter(t=>!t.done).length+late.length;
-    h+='<div class="person-card"><div class="person-name"><span>'+esc(u.name)+(u.role==='owner'?' <span class="chip chip-grey">owner</span>':'')+'</span><span class="muted">'+open+' open</span></div>'+
+    h+='<div class="person-card"><div class="person-name"><span>'+esc(u.name)+(u.role==='owner'?' <span class="chip chip-grey">owner</span>':'')+timeOffOn(u.id,d).map(r=>' <span class="chip chip-blue">🌴 '+esc(toChipText(r))+'</span>').join('')+'</span><span class="muted">'+open+' open</span></div>'+
       late.map(t=>taskRow(t,true)).join('')+day.map(t=>taskRow(t,true)).join('')+
       items.map(x=>'<div class="cl-row'+(itemDone(x.it)>=(Number(x.it.qty)||1)?' done':'')+'"><div class="cl-box'+(itemDone(x.it)>=(Number(x.it.qty)||1)?' on':'')+'" style="cursor:default">'+(itemDone(x.it)>=(Number(x.it.qty)||1)?'✓':'')+'</div><div class="cl-main"><div class="cl-text">'+esc(x.it.text)+'</div><div class="cl-sub"><span class="house-link" onclick="openDetail(\''+x.j.id+'\')">'+esc(x.j.address)+'</span><span class="chip chip-grey">house checklist</span>'+(x.it.due<today&&itemDone(x.it)<(Number(x.it.qty)||1)?'<span class="chip chip-red">past due</span>':'')+'</div></div></div>').join('')+
       tix.map(x=>'<div class="cl-row'+(x.t.done?' done':'')+'"><div class="cl-box'+(x.t.done?' on':'')+'" style="cursor:default">'+(x.t.done?'✓':'')+'</div><div class="cl-main"><div class="cl-text">'+esc(x.t.text)+'</div><div class="cl-sub"><span class="house-link" onclick="openDetail(\''+x.j.id+'\')">'+esc(x.j.address)+'</span><span class="chip chip-grey">🛠 warranty'+(x.t.time?' · '+esc(fmtTime(x.t.time)):'')+'</span>'+(!x.t.done&&x.t.date<today?'<span class="chip chip-red">past due</span>':'')+'</div></div></div>').join('')+
@@ -1752,6 +1776,106 @@ function saveLinks(){
   mutate('settingsSave',{inspLinks:links},()=>{S.settings.inspLinks=links;}).then(ok=>{if(ok)toast('Links saved');});
 }
 
+// ---------- Time off (each person only sees their own; owners see everyone and approve or deny)
+const TO_TYPES=[['full','Full day'],['half','Half day'],['early','Leave early']];
+function toWeekdays(a,b){let n=0,d=a;for(let i=0;i<400&&d<=b;i++){const p=d.split('-');const w=new Date(+p[0],+p[1]-1,+p[2]).getDay();if(w&&w!==6)n++;d=addDays(d,1);}return n;}
+function toDaysIn(r,from,to){
+  if(r.type==='early')return 0;
+  if(r.type==='half')return r.start>=from&&r.start<=to?0.5:0;
+  const a=r.start>from?r.start:from,b=r.end<to?r.end:to;return a<=b?toWeekdays(a,b):0;
+}
+function toWhen(r){return r.start===r.end?fmtDay(r.start):fmtShort(r.start)+' to '+fmtShort(r.end);}
+function toWhat(r){return r.type==='half'?'Half day, '+(r.half==='am'?'morning':'afternoon'):r.type==='early'?'Leave early, '+fmtTime(r.leaveTime):(r.start===r.end?'Full day':'Full days ('+toWeekdays(r.start,r.end)+' workdays)');}
+function toChipText(r){return r.type==='half'?(r.half==='am'?'Off morning':'Off afternoon'):r.type==='early'?'Leaves '+fmtTime(r.leaveTime):'Off all day';}
+function fmtDaysN(n){return (Math.round(n*2)/2).toString().replace(/\.5$/,'½').replace(/^0½$/,'½');}
+function toStatusChip(r){return r.status==='approved'?'<span class="chip chip-green">Approved</span>':r.status==='denied'?'<span class="chip chip-red">Denied</span>':r.status==='cancelled'?'<span class="chip chip-grey">Cancelled</span>':'<span class="chip chip-amber">Waiting</span>';}
+function timeOffOn(uid,d){return (S.timeOff||[]).filter(r=>r.userId===uid&&r.status==='approved'&&r.start<=d&&r.end>=d);}
+function pendingTimeOff(){return (S.timeOff||[]).filter(r=>r.status==='pending').sort((a,b)=>a.start<b.start?-1:1);}
+function toTotals(uid,from,to){const t={days:0,early:0};(S.timeOff||[]).forEach(r=>{if(r.userId!==uid||r.status!=='approved')return;t.days+=toDaysIn(r,from,to);if(r.type==='early'&&r.start>=from&&r.start<=to)t.early++;});return t;}
+function toSetType(k){
+  document.querySelectorAll('#to-type button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));$('to-type').dataset.k=k;
+  $('to-end-row').style.display=k==='full'?'':'none';$('to-half-row').style.display=k==='half'?'':'none';$('to-time-row').style.display=k==='early'?'':'none';
+}
+function openTimeOffModal(forUser){
+  const own=isOwner(),start=addDays(todayStr(),1);
+  openModal({title:own?'Add time off':'Request time off',body:
+    (own?'<div class="form-group"><label class="form-label">Who</label><select class="form-select" id="to-user">'+activeUsers().map(u=>'<option value="'+esc(u.id)+'"'+(u.id===(forUser||S.me.id)?' selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select></div>':'')+
+    '<div class="form-group"><label class="form-label">What do you need?</label><div class="seg" id="to-type" data-k="full" style="display:flex">'+TO_TYPES.map(t=>'<button type="button" data-k="'+t[0]+'" class="'+(t[0]==='full'?'on':'')+'" style="flex:1;font-size:14px;padding:9px 6px" onclick="toSetType(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Day</label><input class="form-input" id="to-start" type="date" value="'+start+'" onchange="if($(\'to-end\').value<this.value)$(\'to-end\').value=this.value"></div>'+
+    '<div class="form-group" id="to-end-row"><label class="form-label">Last day off</label><input class="form-input" id="to-end" type="date" value="'+start+'"><div class="form-hint">Same day if it is only one day.</div></div>'+
+    '<div class="form-group" id="to-half-row" style="display:none"><label class="form-label">Which half</label><select class="form-select" id="to-half"><option value="am">Morning</option><option value="pm" selected>Afternoon</option></select></div>'+
+    '<div class="form-group" id="to-time-row" style="display:none"><label class="form-label">Time leaving</label><input class="form-input" id="to-time" type="time" value="14:00"></div></div>'+
+    '<div class="form-group"><label class="form-label">Reason (optional)</label><input class="form-input" id="to-reason" maxlength="300" placeholder="'+(own?'Sick, called in':'Doctor appointment')+'"></div>'+
+    '<div class="form-hint">'+(own?'Time off you add here is approved right away.':'Only Brenda and Teodoro see your requests. They get an alert on their phones.')+'</div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:own?'Save':'Send request',cls:'btn-primary',fn:()=>{
+      const k=$('to-type').dataset.k,startD=$('to-start').value;
+      if(!startD){toast('Pick the day.',true);return;}
+      const r={id:genId('to_'),userId:own?$('to-user').value:S.me.id,type:k,start:startD,end:k==='full'?($('to-end').value||startD):startD,half:k==='half'?$('to-half').value:'',leaveTime:k==='early'?$('to-time').value:'',reason:$('to-reason').value.trim()};
+      if(r.end<r.start)r.end=r.start;
+      if(k==='early'&&!r.leaveTime){toast('Pick the time leaving.',true);return;}
+      closeModal();
+      mutate('toAdd',{timeOff:r},()=>{(S.timeOff=S.timeOff||[]).push(Object.assign({},r,{userName:userName(r.userId)||S.me.name,status:own?'approved':'pending',answerByName:own?S.me.name:'',createdDate:todayStr(),createdByName:S.me.name}));}).then(ok=>{if(ok)toast(own?'Time off saved':'Request sent to Brenda and Teodoro');});
+    }}]});
+}
+function openToAnswer(id,status){
+  const r=(S.timeOff||[]).find(x=>x.id===id);if(!r)return;
+  openModal({title:(status==='approved'?'Approve':'Deny')+' time off',body:'<p style="font-size:15px;margin-bottom:6px"><b>'+esc(r.userName)+'</b></p><p style="font-size:14px;margin-bottom:12px">'+esc(toWhat(r))+' · '+esc(toWhen(r))+(r.reason?'<br><span class="muted">'+esc(r.reason)+'</span>':'')+'</p>'+
+    '<div class="form-group"><label class="form-label">Note for '+esc(r.userName)+' (optional)</label><input class="form-input" id="toa-note" maxlength="300" placeholder="'+(status==='approved'?'Enjoy':'Sorry, we have a final that day')+'"></div>',
+    buttons:[{label:'Cancel',fn:closeModal},{label:status==='approved'?'Approve':'Deny',cls:status==='approved'?'btn-green':'btn-red',fn:()=>{
+      const note=$('toa-note').value.trim();closeModal();
+      mutate('toAnswer',{id,status,note},()=>{r.status=status;r.answerByName=S.me.name;r.answerNote=note;r.answerDate=todayStr();});
+    }}]});
+}
+function cancelTimeOff(id){
+  const r=(S.timeOff||[]).find(x=>x.id===id);if(!r)return;
+  if(!confirm('Cancel this time off? '+toWhat(r)+', '+toWhen(r)))return;
+  mutate('toCancel',{id},()=>{r.status='cancelled';});
+}
+function toRow(r,owner){
+  const today=todayStr();
+  const canCancel=r.status==='pending'||(r.status==='approved'&&r.end>=today);
+  return '<div class="res-row"><div style="flex:1;min-width:0">'+(owner?'<div class="q-title">'+esc(r.userName)+'</div>':'')+
+    '<div style="font-size:14px">'+esc(toWhat(r))+' · '+esc(toWhen(r))+'</div>'+
+    '<div class="q-sub">'+(r.reason?esc(r.reason)+' · ':'')+(r.status==='pending'?'Asked '+esc(fmtShort(r.createdDate)):r.status==='cancelled'?'Cancelled':(r.status==='approved'?'Approved':'Denied')+(r.answerByName?' by '+esc(r.answerByName):''))+'</div>'+
+    (r.answerNote&&r.status!=='pending'?'<div class="q-sub">Note: '+esc(r.answerNote)+'</div>':'')+
+    (owner&&r.status==='pending'?'<div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-green btn-sm" style="flex:1" onclick="openToAnswer(\''+r.id+'\',\'approved\')">✓ Approve</button><button class="btn btn-red btn-sm" style="flex:1" onclick="openToAnswer(\''+r.id+'\',\'denied\')">✕ Deny</button></div>':'')+
+    '</div><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+toStatusChip(r)+(canCancel&&!(owner&&r.status==='pending')?'<button class="link-btn" onclick="cancelTimeOff(\''+r.id+'\')">cancel</button>':'')+'</div></div>';
+}
+// on My List: your own requests and how much time off you have taken this year
+function myTimeOffCard(){
+  const today=todayStr(),y=today.slice(0,4);
+  const mine=(S.timeOff||[]).filter(r=>r.userId===S.me.id);
+  const tot=toTotals(S.me.id,y+'-01-01',y+'-12-31');
+  const show=mine.filter(r=>r.status==='pending'||r.end>=addDays(today,-30)).sort((a,b)=>a.start<b.start?1:-1);
+  let h='<div class="list-card"><div class="list-head">🌴 Your time off<span>'+y+': '+fmtDaysN(tot.days)+' day'+(tot.days>0&&tot.days<=1?'':'s')+(tot.early?' · left early '+tot.early+'x':'')+'</span></div>';
+  h+=show.map(r=>toRow(r,false)).join('')||'<div class="muted" style="padding:8px 2px">No time off requests.</div>';
+  h+='<div class="add-row" style="margin:10px 0"><button class="btn btn-outline" style="flex:1" onclick="openTimeOffModal()">+ Request time off</button></div></div>';
+  return h;
+}
+// on Team and To Dos (owners): requests waiting for an answer and who is off soon
+function teamTimeOffCard(){
+  const today=todayStr(),soon=addDays(today,14);
+  const pend=pendingTimeOff();
+  const up=(S.timeOff||[]).filter(r=>r.status==='approved'&&r.end>=today&&r.start<=soon).sort((a,b)=>a.start<b.start?-1:1);
+  let h='<div class="list-card"><div class="list-head">🌴 Time off requests<span>'+pend.length+' waiting</span></div>';
+  h+=pend.map(r=>toRow(r,true)).join('')||'<div class="muted" style="padding:8px 2px">No requests waiting.</div>';
+  if(up.length)h+='<div class="svc-sub">Off in the next 2 weeks</div>'+up.map(r=>'<div class="res-row"><div style="flex:1"><b style="font-weight:600">'+esc(r.userName)+'</b> · '+esc(toWhat(r))+'<div class="q-sub">'+esc(toWhen(r))+(r.reason?' · '+esc(r.reason):'')+'</div></div><button class="link-btn" onclick="cancelTimeOff(\''+r.id+'\')">cancel</button></div>').join('');
+  h+='<div class="add-row" style="margin:10px 0"><button class="btn btn-outline" style="flex:1" onclick="openTimeOffModal()">+ Add time off for someone</button></div></div>';
+  return h;
+}
+function timeOffReportRows(){
+  const d=R.data;const rows=[];
+  const list=(d.timeOff||[]).filter(r=>!R.who||r.userName===R.who);
+  const by={};list.forEach(r=>{(by[r.userName]=by[r.userName]||[]).push(r);});
+  Object.keys(by).sort((a,b)=>a.localeCompare(b)).forEach(n=>{
+    let days=0,early=0;
+    by[n].sort((a,b)=>a.start<b.start?-1:1).forEach(r=>{const x=toDaysIn(r,R.from,R.to);days+=x;if(r.type==='early')early++;
+      rows.push([n,toWhen(r),toWhat(r),r.type==='early'?'left early':fmtDaysN(x),r.reason||'',r.answerByName||'']);});
+    rows.push([n,'TOTAL','',fmtDaysN(days)+' day'+(days>0&&days<=1?'':'s')+(early?' · left early '+early+'x':''),'','']);
+  });
+  return {head:['Employee','When','Type','Days','Reason','Approved by'],rows,groups:true};
+}
+
 // ---------- Reports (owners)
 const R={from:'',to:'',who:'',job:'',view:'who',data:null,loading:false,error:''};
 function weekStart(iso){const p=iso.split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);const dow=(d.getDay()+6)%7;return addDays(iso,-dow);}
@@ -1771,6 +1895,7 @@ async function runReport(){
   try{R.data=await api('report',{from:R.from,to:R.to});}catch(e){R.error=e.code==='offline'?'No signal. Reports need a connection.':e.message;}
   R.loading=false;renderReports();
 }
+function reportNames(){const s={};S.users.forEach(u=>{s[u.name]=1;});if(R.data)(R.data.activity||[]).forEach(a=>{if(a.userName)s[a.userName]=1;});return Object.keys(s).sort((a,b)=>a.localeCompare(b));}
 function reportRows(){
   const d=R.data;if(!d)return {head:[],rows:[],groups:false};
   const inRange=x=>x>=R.from&&x<=R.to;
@@ -1792,6 +1917,7 @@ function reportRows(){
     merged.sort((a,b)=>a.address.localeCompare(b.address)||(a.date<b.date?-1:a.date>b.date?1:0)||a.userName.localeCompare(b.userName));
     return {head:['House','Date','Employee','Type','What','Entered later'],rows:merged.map(a=>[a.address||'(no house)',fmtDay(a.date),a.userName||'(unknown)',a.kind,a.detail,lateFlag(a)]),groups:true};
   }
+  if(R.view==='timeoff')return timeOffReportRows();
   if(R.view==='fails'){
     const rows=[];
     S.jobs.forEach(j=>{if(!jobOk(j.id))return;(j.inspLog||[]).forEach(e=>{if(e.result!=='fail'||!inRange(e.date))return;
@@ -1813,10 +1939,10 @@ function reportRows(){
 function renderReports(){
   if(!isOwner()){$('reports-body').innerHTML='';return;}
   if(!R.from){const t=todayStr();R.from=weekStart(t);R.to=t;}
-  const views=[['who','Who worked on what'],['house','By house'],['fails','Failed inspections'],['assigned','Assigned vs completed']];
+  const views=[['who','Who worked on what'],['house','By house'],['fails','Failed inspections'],['assigned','Assigned vs completed'],['timeoff','Time off']];
   let h='<div class="section-title">Reports</div><div class="no-print"><div class="toolbar" style="justify-content:flex-start"><div class="seg">'+[['this','This week'],['last','Last week'],['month','This month'],['30','Last 30 days']].map(p=>'<button onclick="setRange(\''+p[0]+'\')">'+p[1]+'</button>').join('')+'</div>'+
     '<input type="date" class="search-input" style="max-width:160px;flex:none" id="rep-from" value="'+R.from+'" onchange="R.from=this.value"><span class="muted">to</span><input type="date" class="search-input" style="max-width:160px;flex:none" id="rep-to" value="'+R.to+'" onchange="R.to=this.value"><button class="btn btn-primary" onclick="runReport()">Run report</button></div>'+
-    '<div class="toolbar" style="justify-content:flex-start"><select class="search-input" style="max-width:190px;flex:none" onchange="R.who=this.value;renderReports()"><option value="">Everyone</option>'+S.users.map(u=>'<option'+(R.who===u.name?' selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select>'+
+    '<div class="toolbar" style="justify-content:flex-start"><select class="search-input" style="max-width:190px;flex:none" onchange="R.who=this.value;renderReports()"><option value="">Everyone</option>'+reportNames().map(n=>'<option'+(R.who===n?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select>'+
     '<select class="search-input" style="max-width:260px;flex:none" onchange="R.job=this.value;renderReports()"><option value="">All houses</option>'+listSort(S.jobs).map(j=>'<option value="'+j.id+'"'+(R.job===j.id?' selected':'')+'>'+esc(j.address)+'</option>').join('')+'</select>'+
     '<div class="seg">'+views.map(v=>'<button class="'+(R.view===v[0]?'on':'')+'" onclick="R.view=\''+v[0]+'\';renderReports()">'+v[1]+'</button>').join('')+'</div></div></div>';
   if(R.loading)h+='<div class="empty-state">Loading report...</div>';
@@ -1830,8 +1956,8 @@ function renderReports(){
       h+='<div class="master-table-wrap"><table class="rep-table"><thead><tr>'+t.head.slice(t.groups?1:0).map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>';
       let last=null;
       t.rows.forEach(r=>{
-        if(t.groups&&r[0]!==last){last=r[0];const n=t.rows.filter(x=>x[0]===last).length;h+='<tr class="rep-group"><td colspan="'+(t.head.length-1)+'">'+esc(last)+' <span class="muted" style="font-weight:400">'+n+' line'+(n===1?'':'s')+'</span></td></tr>';}
-        h+='<tr>'+r.slice(t.groups?1:0).map(c=>'<td'+(/PAST DUE|Still open/.test(c)?' style="color:var(--red);font-weight:600"':'')+'>'+esc(c)+'</td>').join('')+'</tr>';
+        if(t.groups&&r[0]!==last){last=r[0];const n=t.rows.filter(x=>x[0]===last&&x[1]!=='TOTAL').length;h+='<tr class="rep-group"><td colspan="'+(t.head.length-1)+'">'+esc(last)+' <span class="muted" style="font-weight:400">'+n+' line'+(n===1?'':'s')+'</span></td></tr>';}
+        h+='<tr'+(r[1]==='TOTAL'?' style="font-weight:600;background:var(--cream)"':'')+'>'+r.slice(t.groups?1:0).map(c=>'<td'+(/PAST DUE|Still open/.test(c)?' style="color:var(--red);font-weight:600"':'')+'>'+esc(c)+'</td>').join('')+'</tr>';
       });
       h+='</tbody></table></div>';
     }
@@ -1856,7 +1982,7 @@ setInterval(()=>{if(queue.length&&!flushing)flush();},30000);
   try{S.me=JSON.parse(lsGet('pjt2_me')||'null');}catch(e){S.me=null;}
   try{queue=JSON.parse(lsGet('pjt2_queue')||'[]')||[];}catch(e){queue=[];}
   if(S.token&&S.me){
-    try{const c=JSON.parse(lsGet('pjt2_cache')||'null');if(c){S.jobs=c.jobs||[];S.tasks=c.tasks||[];S.contacts=c.contacts||[];S.settings=c.settings||S.settings;S.users=c.users||[];S.team=c.team||[];S.photoCounts=c.photoCounts||{};}}catch(e){}
+    try{const c=JSON.parse(lsGet('pjt2_cache')||'null');if(c){S.jobs=c.jobs||[];S.tasks=c.tasks||[];S.timeOff=c.timeOff||[];S.contacts=c.contacts||[];S.settings=c.settings||S.settings;S.users=c.users||[];S.team=c.team||[];S.photoCounts=c.photoCounts||{};}}catch(e){}
     render();sync();
   }else showLogin();
 })();
