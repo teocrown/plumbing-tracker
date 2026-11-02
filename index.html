@@ -304,6 +304,13 @@
   .q-btns .btn{padding:10px 13px;}
   .q-day{font-size:12px;font-weight:700;color:var(--ink-light);padding:12px 2px 2px;text-transform:uppercase;letter-spacing:.5px;}
   .q-day.late{color:var(--red);}
+  .q-house{padding:10px 2px;border-bottom:1px solid var(--border);}
+  .q-house:last-child{border-bottom:none;}
+  .q-house .q-row{padding:0;border-bottom:none;}
+  .q-insps{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
+  .q-insp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface-2,rgba(0,0,0,.025));border-radius:10px;padding:6px 6px 6px 12px;}
+  .q-insp-name{flex:1;min-width:110px;font-size:14px;font-weight:600;}
+  .q-insp-name small{display:block;font-size:12px;font-weight:400;color:var(--ink-light);}
   .contact-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
   .contact-row:last-child{border-bottom:none;}
   .contact-main{flex:1;min-width:160px;}
@@ -795,6 +802,7 @@ function renderMyList(){
 function setSeg(id,idx){[...$(id).children].forEach((b,i)=>b.classList.toggle('on',i===idx));}
 function setInspFilter(f){inspFilter=f;setSeg('insp-filter',f==='all'?0:1);renderInspections();}
 function copyPermit(jobId){const job=getJob(jobId);if(!job||!job.permit)return;copyText(job.permit).then(ok=>{toast(ok?'Project number '+job.permit+' copied. Paste it on the city page.':'Could not copy. Press and hold the number to copy it.',!ok);});}
+function groupByHouse(list){const out=[];list.forEach(x=>{let g=out.find(z=>z.id===x.job.id);if(!g){g={id:x.job.id,items:[]};out.push(g);}g.items.push(x);});return out;}
 function renderQueue(){
   const own=isOwner(),today=todayStr(),tomorrow=addDays(today,1);
   const reqs=allReqs();
@@ -804,22 +812,34 @@ function renderQueue(){
   let h='';
   {
     h+='<div class="list-card"><div class="list-head">🔔 Ready for inspection, to be set<span>'+toSet.length+'</span></div>';
-    h+=toSet.map(x=>'<div class="q-row"><div class="q-main"><div class="q-title">'+addr(x)+' · '+esc(inspLabel(x.r.key))+'</div><div class="q-sub">Asked by '+esc(x.r.byName||'')+', '+esc(fmtDay(x.r.date))+(x.r.note?' · '+esc(x.r.note):'')+'</div></div><div class="q-btns">'+
-      (own?'<button class="btn btn-primary" onclick="openSetModal(\''+x.job.id+'\',\''+x.r.id+'\',\''+x.r.key+'\')">Set date</button><button class="icon-btn" title="Take off the list" aria-label="Take off the list" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">✕</button>'
-        :x.r.by===S.me.id?'<button class="btn btn-outline" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">Cancel</button>':'<span class="chip chip-amber">waiting to be set</span>')+'</div></div>').join('')||'<div class="muted" style="padding:10px 2px">Nothing waiting to be set.</div>';
+    // One row per house; each of that house's inspections sits inside it with its own buttons.
+    h+=groupByHouse(toSet).map(g=>{
+      const askers=[...new Set(g.items.map(x=>x.r.byName||''))].filter(Boolean).join(', ');
+      return '<div class="q-house"><div class="q-row"><div class="q-main"><div class="q-title">'+addr(g.items[0])+'</div><div class="q-sub">'+(askers?'Asked by '+esc(askers):'')+'</div></div></div><div class="q-insps">'+
+        g.items.map(x=>'<div class="q-insp"><div class="q-insp-name">'+esc(inspLabel(x.r.key))+'<small>'+esc(fmtDay(x.r.date))+(x.r.note?' · '+esc(x.r.note):'')+'</small></div><div class="q-btns">'+
+          (own?'<button class="btn btn-primary" onclick="openSetModal(\''+x.job.id+'\',\''+x.r.id+'\',\''+x.r.key+'\')">Set date</button><button class="icon-btn" title="Take off the list" aria-label="Take off the list" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">✕</button>'
+            :x.r.by===S.me.id?'<button class="btn btn-outline" onclick="delReq(\''+x.job.id+'\',\''+x.r.id+'\')">Cancel</button>':'<span class="chip chip-amber">waiting to be set</span>')+'</div></div>').join('')+
+        '</div></div>';
+    }).join('')||'<div class="muted" style="padding:10px 2px">Nothing waiting to be set.</div>';
     h+='</div>';
   }
   {
     h+='<div class="list-card"><div class="list-head">⏳ Set, waiting on results<span>'+pend.length+'</span></div>';
-    let last=null;
-    pend.forEach(x=>{
-      const d=x.r.setDate;
-      if(d!==last){last=d;h+='<div class="q-day'+(d<today?' late':'')+'">'+(d<today?'Result due · set for '+esc(fmtDay(d)):d===today?'Today · '+esc(fmtDay(d)):d===tomorrow?'Tomorrow · '+esc(fmtDay(d)):esc(fmtDay(d)))+'</div>';}
-      const iu=inspUrlFor(x.job);
-      h+='<div class="q-row"><div class="q-main"><div class="q-title">'+addr(x)+' · '+esc(inspLabel(x.r.key))+'</div><div class="q-sub">'+(x.job.permit?'#'+esc(x.job.permit)+' · ':'')+'Asked by '+esc(x.r.byName||'')+(x.r.note?' · '+esc(x.r.note):'')+'</div></div><div class="q-btns">'+
-        (own?(iu?'<a class="btn btn-outline" href="'+esc(iu)+'" target="_blank" rel="noopener" onclick="copyPermit(\''+x.job.id+'\')">City ↗</a>':'')+
-          '<button class="btn btn-green" onclick="openInspModal(\''+x.r.key+'\',\'pass\',\''+x.job.id+'\')">Passed</button><button class="btn btn-red" onclick="openInspModal(\''+x.r.key+'\',\'fail\',\''+x.job.id+'\')">Failed</button><button class="icon-btn" title="Change the date" aria-label="Change the date" onclick="openSetModal(\''+x.job.id+'\',\''+x.r.id+'\',\''+x.r.key+'\')">✎</button>'
-          :'<span class="chip chip-blue">set for '+esc(fmtShort(d))+'</span>')+'</div></div>';
+    // Grouped by the day it was set for, then one row per house with all its inspections inside.
+    const days=[];pend.forEach(x=>{let g=days.find(z=>z.d===x.r.setDate);if(!g){g={d:x.r.setDate,items:[]};days.push(g);}g.items.push(x);});
+    days.forEach(dg=>{
+      const d=dg.d;
+      h+='<div class="q-day'+(d<today?' late':'')+'">'+(d<today?'Result due · set for '+esc(fmtDay(d)):d===today?'Today · '+esc(fmtDay(d)):d===tomorrow?'Tomorrow · '+esc(fmtDay(d)):esc(fmtDay(d)))+'</div>';
+      groupByHouse(dg.items).map(g=>{
+        const job=g.items[0].job,iu=inspUrlFor(job);
+        const askers=[...new Set(g.items.map(x=>x.r.byName||''))].filter(Boolean).join(', ');
+        h+='<div class="q-house"><div class="q-row"><div class="q-main"><div class="q-title">'+addr(g.items[0])+'</div><div class="q-sub">'+(job.permit?'#'+esc(job.permit)+' · ':'')+(askers?'Asked by '+esc(askers):'')+'</div></div><div class="q-btns">'+
+          (own&&iu?'<a class="btn btn-outline" href="'+esc(iu)+'" target="_blank" rel="noopener" onclick="copyPermit(\''+job.id+'\')">City ↗</a>':'')+'</div></div><div class="q-insps">'+
+          g.items.map(x=>'<div class="q-insp"><div class="q-insp-name">'+esc(inspLabel(x.r.key))+(x.r.note?'<small>'+esc(x.r.note)+'</small>':'')+'</div><div class="q-btns">'+
+            (own?'<button class="btn btn-green" onclick="openInspModal(\''+x.r.key+'\',\'pass\',\''+x.job.id+'\')">Passed</button><button class="btn btn-red" onclick="openInspModal(\''+x.r.key+'\',\'fail\',\''+x.job.id+'\')">Failed</button><button class="icon-btn" title="Change the date" aria-label="Change the date" onclick="openSetModal(\''+x.job.id+'\',\''+x.r.id+'\',\''+x.r.key+'\')">✎</button>'
+              :'<span class="chip chip-blue">set for '+esc(fmtShort(d))+'</span>')+'</div></div>').join('')+
+          '</div></div>';
+      });
     });
     if(!pend.length)h+='<div class="muted" style="padding:10px 2px">No inspections waiting on results.</div>';
     h+='</div>';
